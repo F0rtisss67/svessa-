@@ -1,3 +1,4 @@
+import { advanceMotion } from "./motion.js";
 import {
   ROLES,
   ROLE,
@@ -31,7 +32,6 @@ let profile = { name: saved.name || "Космонавт", color: saved.color || 
     r: Math.random() * 1.3 + 0.3,
   }));
 let page = "home",
-  filter = "all",
   ws,
   state,
   myId,
@@ -94,29 +94,13 @@ function shell(body) {
   return `<div class="layout"><aside class="rail"><a href="#" class="rail-logo" aria-label="Свесса — главная">✳</a>${railIcons.map(([id, icon, name]) => `<button data-page="${id}" class="${page === id ? "active" : ""}" title="${name}" aria-label="${name}">${icon}</button>`).join("")}<div class="bottom"></div><button data-action="sound" title="Звук" aria-label="Включить или выключить звук">${sound ? "♫" : "♪"}</button><div class="rail-line"></div><button data-action="settings" title="Настройки" aria-label="Настройки">⚙</button></aside><main class="main"><header class="topbar"><a href="#" class="wordmark"><span class="flag"></span><span>СВЕССА<small>КУРС НА ОРБИТУ</small></span></a><nav class="nav"><button data-page="home" class="${page === "home" ? "selected" : ""}">Играть</button><button data-page="roles" class="${page === "roles" ? "selected" : ""}">Роли</button><button data-page="map" class="${page === "map" ? "selected" : ""}">Корабль</button><button data-page="guide" class="${page === "guide" ? "selected" : ""}">Как играть</button></nav><div class="online"><span class="dot"></span><span id="connection-label">${socketStatus === "open" ? "Системы в норме" : "Подключение…"}</span><span class="version">v1.0 · BETA</span></div></header><div class="content">${body}<footer><span>Сделано в Свессе. Для своих. Для космоса. <span class="footer-yellow">✦</span></span><span><span class="flag" style="width:12px;height:8px"></span> Сумская область, Украина · 2026</span></footer></div></main></div>`;
 }
 function roleCard(r, i) {
-  return `<button class="role-card" data-role="${r.id}"><div class="role-avatar">${crewmate(COLORS[i % 12], r.id === "kirill" ? "cap" : r.id === "egor" ? "flower" : "")}</div><div><span class="role-tag ${r.team === "imp" ? "imp" : ""}">${r.team === "imp" ? "ПРЕДАТЕЛЬ" : "ЭКИПАЖ"}</span><h3>${r.name}</h3><p>${r.tag}</p></div></button>`;
+  return `<article class="role-card"><div class="role-avatar">${crewmate(COLORS[i % 12], r.id === "kirill" ? "cap" : r.id === "egor" ? "flower" : "")}</div><div><span class="role-tag">СЕКРЕТНАЯ РОЛЬ</span><h3>${r.name}</h3><p>Узнаешь в полёте</p></div></article>`;
 }
 function home() {
   return `<section class="hero"><div class="hero-copy"><div class="eyebrow"><span class="tiny-line"></span> Свои люди. Открытый космос.</div><h1>ИЗ СВЕССЫ.<br>С ЛЮБОВЬЮ.<br><em>И ПОДОЗРЕНИЕМ.</em></h1><p>Родной посёлок — далеко. Предатель — рядом.<br>Собери друзей, завари борщ и узнай,<br><strong>кто не долетит до дома.</strong></p><div class="hero-meta"><span><i>♙</i> 4–15 игроков</span><span><i>✧</i> 12 уникальных ролей</span><span><i>◎</i> Прямо в браузере</span></div></div><div class="hero-art"><div class="art-grid"></div><div class="orbit"></div><span class="art-label top">UKR // SVESSA–01</span>${ship()}<span class="route-pin"></span><span class="art-label right">ВЫСОТА: 408 КМ<br><br>КУРС: ДОМОЙ ↗</span><span class="art-label bottom"><span class="dot"></span> ВСЕ СИСТЕМЫ СЛИШКОМ В НОРМЕ</span><span class="edition">SUMY REGION SPACE PROGRAM</span></div></section><section><div class="section-title"><h2><span class="number">01 /</span> На борт, космонавт</h2><small>Одна ссылка. Весь твой экипаж.</small></div><div class="play-grid"><article class="play-card create"><span class="card-icon">⊞</span><span class="corner-arrow">↗</span><h3>Создать комнату</h3><p>Твой корабль. Твои правила.<br>Приглашай своих по коду.</p><button class="card-hit" data-action="create" aria-label="Создать комнату"></button></article><article class="play-card join"><h3>Есть приглашение?</h3><p>Введи код и найди свой экипаж.</p><form class="join-row" id="join-form"><input id="join-code" maxlength="6" minlength="6" autocomplete="off" placeholder="КОД КОМНАТЫ" aria-label="Код комнаты" required pattern="[A-Fa-f0-9]{6}"><button aria-label="Войти в комнату">→</button></form></article><article class="play-card"><span class="card-icon" style="color:#c9cba7">⌁</span><span class="corner-arrow" style="color:#8e9b9e">↗</span><h3>Сначала — тренировка</h3><p>Освой корабль с ботами.<br>Без лишних свидетелей.</p><div class="practice-decoration">${crewmate("#8ba483")}</div><button class="card-hit" data-action="practice" aria-label="Тренировка с ботами"></button></article></div></section><section><div class="section-title"><h2><span class="number">02 /</span> Знакомые лица. Новые секреты.</h2><button class="section-link" data-page="roles">Все 12 ролей <span>↗</span></button></div><div class="roles-grid">${[ROLES[1], ROLES[2], ROLES[5], ROLES[10]].map((r, i) => roleCard(r, [2, 4, 6, 0][i])).join("")}</div></section><div class="mission-strip"><div><div class="mission-title"><span style="color:var(--yellow);font-size:18px">✧</span> Маленький посёлок. Большая космическая история.</div><p>Украинский корабль, знакомые места и задания с домашним привкусом.</p></div><div class="route"><span>СВЕССА</span><span class="route-line"></span><span>ОРБИТА</span><span style="color:var(--accent)">↗</span></div></div>`;
 }
 function rolesPage() {
-  return `<div class="eyebrow">Экипаж с характером</div><h1 class="page-title">У каждого свой секрет.</h1><p class="page-sub">6 ролей экипажа. 6 ролей предателей. А кто твой сосед — решать тебе.<br>Роли распределяются случайно. В тренировке можно выбрать любую.</p><div class="filters">${[
-    ["all", "Все роли · 12"],
-    ["crew", "Экипаж · 6"],
-    ["imp", "Предатели · 6"],
-  ]
-    .map(
-      ([id, n]) =>
-        `<button data-filter="${id}" class="${filter === id ? "active" : ""}">${n}</button>`,
-    )
-    .join("")}</div><div class="all-roles">${ROLES.filter(
-    (r) => filter === "all" || r.team === filter,
-  )
-    .map(
-      (r, i) =>
-        `<article class="detail-role"><div class="role-top"><div class="role-avatar">${crewmate(COLORS[ROLES.indexOf(r)], i === 1 ? "cap" : "")}</div><div><span class="role-tag ${r.team === "imp" ? "imp" : ""}">${r.team === "crew" ? "ЭКИПАЖ" : "ПРЕДАТЕЛЬ"}</span><h3>${r.name}</h3></div></div><p>${r.desc}</p>${r.skills.length ? r.skills.map((s) => `<span class="skill-pill">${s[1]} · ${s[2]}с</span>`).join("") : '<span class="skill-pill">' + (r.team === "crew" ? "Задания и дедукция" : "Убить · 20с") + "</span>"}</article>`,
-    )
-    .join("")}</div>`;
+  return `<div class="eyebrow">Экипаж с характером</div><h1 class="page-title">У каждого свой секрет.</h1><p class="page-sub">Двенадцать знакомых лиц на одном корабле.<br>Свою роль и её возможности ты узнаешь в начале полёта.</p><div class="filters"><span class="role-tag">12 СЕКРЕТНЫХ РОЛЕЙ</span></div><div class="all-roles">${ROLES.map((r, i) => `<article class="detail-role"><div class="role-top"><div class="role-avatar">${crewmate(COLORS[i], i === 1 ? "cap" : "")}</div><div><span class="role-tag">СЕКРЕТНАЯ РОЛЬ</span><h3>${r.name}</h3></div></div></article>`).join("")}</div>`;
 }
 function guide() {
   return `<div class="eyebrow">Перед первым полётом</div><h1 class="page-title">Доверяй. Но проверяй.</h1><p class="page-sub">Создай комнату, отправь друзьям код и вместе отправляйтесь на орбиту.</p><div class="instruction-grid"><article class="instruction-card"><span class="step">01</span><h3>Займи своё место</h3><p>От 4 до 15 игроков, до 3 предателей. Выбери цвет костюма и имя. Капитан настраивает скорость и голосование. Не хватает своих? Добавь ботов.</p></article><article class="instruction-card"><span class="step">02</span><h3>Выполни свою миссию</h3><p>Мирные чинят проводку, выращивают подсолнухи и сортируют посылки. Заполните шкалу заданий или выгоните всех предателей. Призраки продолжают задания!</p></article><article class="instruction-card"><span class="step">03</span><h3>Найди чужого</h3><p>Заметил тело — сообщи. Обсуждайте в чате и голосуйте. Предатели побеждают, когда остаётся один мирный или взрывается реактор. На починку реактора есть 45 секунд.</p></article></div><div class="instruction-card" style="margin-top:20px"><h3>Панель управления</h3><p><span class="key">W A S D</span> / <span class="key">↑ ← ↓ →</span> — движение и направление взгляда &nbsp; <span class="key">E</span> — задание &nbsp; <span class="key">R</span> — сообщить о теле &nbsp; <span class="key">M</span> — карта<br>На телефоне используй стрелки и кнопки на экране. Люки находятся в левом нижнем углу комнат. Экстренная кнопка — на Площади Свессы.<br>У всех предателей: убийство с перезарядкой 20 секунд, вентиляция и три саботажа. После собраний действует защита от особых атак. Боты умеют ходить, выполнять задания, убивать и сообщать о телах; обсуждения — за людьми.</p><button class="btn" data-action="practice">Попробовать с ботами ↗</button></div>`;
@@ -164,21 +148,7 @@ function createDialog(practice = false) {
     practice ? "Учебный полёт" : "Новый экипаж",
     `<form id="create-form"><input type="hidden" name="practice" value="${practice}"><div class="field"><label for="player-name">Твой позывной</label><input id="player-name" name="name" value="${esc(profile.name)}" maxlength="18" required></div><label class="hint">Цвет скафандра</label>${colorPicker()}${
       practice
-        ? `<div class="field"><label for="practice-role">Твоя роль</label><select id="practice-role" name="role"><option value="random">Случайная роль</option>${[
-            "crew",
-            "imp",
-          ]
-            .map(
-              (team) =>
-                `<optgroup label="${team === "crew" ? "Экипаж" : "Предатели"}">${ROLES.filter(
-                  (r) => r.team === team,
-                )
-                  .map((r) => `<option value="${r.id}">${r.name}</option>`)
-                  .join("")}</optgroup>`,
-            )
-            .join(
-              "",
-            )}</select></div><p class="hint">На борту будут ещё 7 ботов. Все способности, задания и саботажи доступны в обычном режиме.</p>`
+        ? `<div class="field"><label for="practice-role">Твоя роль</label><select id="practice-role" name="role"><option value="random">Случайная роль</option>${ROLES.map((r) => `<option value="${r.id}">${r.name}</option>`).join("")}</select></div><p class="hint">На борту будут ещё 7 ботов. Все способности, задания и саботажи доступны в обычном режиме.</p>`
         : `<div class="field"><label for="room-name">Название комнаты</label><input id="room-name" name="roomName" value="Экипаж Свессы" maxlength="28" required></div><div class="two-fields"><div class="field"><label for="max-players">Мест на борту</label><select id="max-players" name="max">${[6, 8, 10, 12, 15].map((n) => `<option ${n === 10 ? "selected" : ""}>${n}</option>`).join("")}</select></div><div class="field"><label for="impostors">Предателей</label><select id="impostors" name="impostors"><option>1</option><option>2</option><option>3</option></select></div></div><label class="hint"><input type="checkbox" name="public"> Показывать в открытых комнатах</label>`
     }<button class="btn full" type="submit">${practice ? "Начать тренировку" : "Создать комнату"} <span>↗</span></button><p class="hint" style="text-align:center;margin-bottom:0">${practice ? "Борщ будет. Последствия — тоже." : "Друзья смогут присоединиться по коду комнаты."}</p></form>`,
     false,
@@ -407,8 +377,9 @@ function onState(prev) {
   }
 }
 function renderGame() {
-  app.innerHTML = `<div class="game-shell"><canvas id="game-canvas" class="game-canvas" aria-label="Карта корабля, управление WASD"></canvas><div class="game-top"><div class="progress-panel"><div class="progress-title"><span>ОБЩИЕ ЗАДАНИЯ</span><strong id="progress-number">0%</strong></div><div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div></div><div class="game-identity" id="game-identity"></div><div class="game-utilities"><button data-action="toggle-map" aria-label="Карта" title="Карта (M)">⌘</button><button data-action="game-chat" aria-label="Чат" title="Чат">☷</button><button data-action="game-menu" aria-label="Меню">⚙</button></div></div><div class="task-list" id="task-list"></div><div class="role-help" id="role-help"></div><div class="location" id="location"></div><div id="reactor-alert"></div><div class="game-actions" id="game-actions"></div><div class="mobile-controls"><button data-key="w" aria-label="Вверх">↑</button><button data-key="a" aria-label="Влево">←</button><button data-key="s" aria-label="Вниз">↓</button><button data-key="d" aria-label="Вправо">→</button></div><div id="flash-root"></div></div>`;
+  app.innerHTML = `<div class="game-shell"><canvas id="game-canvas" class="game-canvas" aria-label="Карта корабля, управление WASD"></canvas><div class="game-top"><div class="progress-panel"><div class="progress-title"><span>ОБЩИЕ ЗАДАНИЯ</span><strong id="progress-number">0%</strong></div><div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div></div><button class="game-identity" id="game-identity" data-action="role-info" aria-label="Моя роль и способности"></button><div class="game-utilities"><button data-action="toggle-map" aria-label="Карта" title="Карта (M)">⌘</button><button data-action="game-chat" aria-label="Чат" title="Чат">☷</button><button data-action="game-menu" aria-label="Меню">⚙</button></div></div><div class="task-list" id="task-list"></div><div class="role-help" id="role-help"></div><div class="location" id="location"></div><div id="reactor-alert"></div><div class="game-actions" id="game-actions"></div><div class="mobile-controls"><button data-key="w" aria-label="Вверх">↑</button><button data-key="a" aria-label="Влево">←</button><button data-key="s" aria-label="Вниз">↓</button><button data-key="d" aria-label="Вправо">→</button></div><div id="flash-root"></div></div>`;
   localPosition = null;
+  drawPositions.clear();
 }
 const symbols = {
   kill: "†",
@@ -445,7 +416,7 @@ function updateHud() {
   $("#location").textContent =
     roomAt(me.x, me.y)?.name || "СОЕДИНИТЕЛЬНЫЙ КОРИДОР";
   const actionButton = (key, name, style = "", cd = 0, sym = "") =>
-    `<button class="action ${style}" data-game="${key}" ${cd > 0 ? "disabled" : ""}><span class="action-symbol">${sym || symbols[key] || "✦"}</span>${name}${cd > 0 ? `<small>${cd}с</small>` : ""}</button>`;
+    `<button class="action ${style}" data-game="${key}" aria-label="${name}${cd > 0 ? `, перезарядка ${cd} секунд` : ""}" ${cd > 0 ? "disabled" : ""}><span class="action-orb"><span class="action-symbol">${sym || symbols[key] || "✦"}</span>${cd > 0 ? `<small class="action-cooldown">${cd}</small>` : ""}</span><span class="action-label">${name}</span></button>`;
   let buttons = "";
   if (me.alive && !me.rocket) {
     if (imp) {
@@ -692,23 +663,40 @@ function rounded(c, x, y, w, h, r = 8, fill, stroke) {
 }
 function drawPerson(c, p, ghost = false) {
   const color = COLORS[p.color] || COLORS[0];
+  const stride = Math.sin(p.phase || 0) * (p.strength || 0);
+  const bob = Math.abs(stride) * 2;
   c.save();
   c.translate(p.x, p.y);
   if (ghost) c.globalAlpha = 0.35;
-  const wobble =
-    gameActive && Math.hypot(p.fx || 0, p.fy || 0) > 0
-      ? Math.sin(performance.now() / 180 + p.x) * 1
-      : 0;
-  c.translate(0, wobble);
   c.fillStyle = "#0005";
   c.beginPath();
-  c.ellipse(0, 17, 22, 8, 0, 0, 7);
+  c.ellipse(0, 23, 22, 7, 0, 0, 7);
   c.fill();
+  c.translate(0, -bob);
   c.lineWidth = 3;
+  // Opposite feet alternate while the suit gently rises on each step.
+  rounded(
+    c,
+    -13 - stride * 4,
+    14 + Math.max(0, stride) * 3,
+    12,
+    17,
+    4,
+    color,
+    "#152530",
+  );
+  rounded(
+    c,
+    9 + stride * 4,
+    14 + Math.max(0, -stride) * 3,
+    12,
+    17,
+    4,
+    color,
+    "#152530",
+  );
   rounded(c, -24, -10, 12, 28, 4, color, "#152530");
   rounded(c, -15, -25, 37, 49, 15, color, "#152530");
-  rounded(c, -13, 15, 12, 16, 3, color, "#152530");
-  rounded(c, 9, 15, 12, 16, 3, color, "#152530");
   const flip = p.fx < -0.1;
   c.save();
   if (flip) {
@@ -971,12 +959,7 @@ function drawWorld(c, t, preview = false) {
     const me = state.players.find((p) => p.id === myId);
     for (const p of [...state.players].sort((a, b) => a.y - b.y)) {
       if (p.rocket || (!p.alive && me?.alive)) continue;
-      let point = drawPositions.get(p.id);
-      if (!point || preview) point = { x: p.x, y: p.y };
-      else {
-        point.x += (p.x - point.x) * 0.24;
-        point.y += (p.y - point.y) * 0.24;
-      }
+      const point = advanceMotion(preview ? null : drawPositions.get(p.id), p);
       drawPositions.set(p.id, point);
       drawPerson(c, { ...p, ...point }, !p.alive);
       c.font = "600 10px Manrope,sans-serif";
@@ -1233,25 +1216,12 @@ document.addEventListener("click", async (e) => {
     window.scrollTo(0, 0);
     return;
   }
-  if (b.dataset.filter) {
-    filter = b.dataset.filter;
-    render();
-    return;
-  }
   if (b.dataset.color !== undefined) {
     profile.color = Number(b.dataset.color);
     document.querySelectorAll(".color").forEach((q) => {
       q.classList.toggle("active", Number(q.dataset.color) === profile.color);
       q.setAttribute("aria-pressed", Number(q.dataset.color) === profile.color);
     });
-    return;
-  }
-  if (b.dataset.role) {
-    const r = ROLE(b.dataset.role);
-    openModal(
-      r.name,
-      `<div style="width:80px;margin:0 auto">${crewmate(COLORS[ROLES.indexOf(r)])}</div><p class="hint">${r.desc}</p><span class="role-tag ${r.team === "imp" ? "imp" : ""}">${r.team === "imp" ? "ПРЕДАТЕЛЬ" : "ЭКИПАЖ"}</span><button class="btn full" data-action="all-roles">Все роли ↗</button>`,
-    );
     return;
   }
   if (b.dataset.join) {
@@ -1383,6 +1353,17 @@ document.addEventListener("click", async (e) => {
       modalRoot.innerHTML = "";
       send({ type: "again" });
       break;
+    case "role-info": {
+      const me = state?.players.find((p) => p.id === myId);
+      if (me) {
+        const role = ROLE(me.role);
+        openModal(
+          "Твоя роль: " + role.name,
+          `<p class="hint">${role.desc}</p>`,
+        );
+      }
+      break;
+    }
     case "toggle-map":
       showMap = !showMap;
       break;
