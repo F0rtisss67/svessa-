@@ -217,7 +217,11 @@ test("teleport, bomb, chain lightning and controllable rocket enforce their effe
     { type: "skill", key: "teleport", room: "kitchen" },
     T + 21000,
   );
-  assert.equal(f.p.x, 400);
+  assert.equal(
+    f.p.x,
+    ROOMS.find((room) => room.id === "kitchen").x +
+      ROOMS.find((room) => room.id === "kitchen").w / 2,
+  );
   assert.throws(
     () =>
       action(
@@ -336,4 +340,17 @@ test("Fortis wins a final self explosion even when no impostor survives", () => 
   assert.equal(p.alive, false);
   assert.equal(r.players.filter((q) => q.alive).length, 0);
   assert.equal(r.winner, "imp");
+});
+
+test("snapshot coordinates are compact while server physics keep full precision", () => {
+  const { r, p } = fixture("crew");
+  p.x = 840.123456789;
+  p.y = 600.987654321;
+  p.fx = 0.123456789;
+  const player = view(r, p.id, T).players.find((q) => q.id === p.id);
+  assert.equal(player.x, 840.1);
+  assert.equal(player.y, 601);
+  assert.equal(player.fx, 0.123);
+  assert.equal(p.x, 840.123456789);
+  assert.equal(p.y, 600.987654321);
 });

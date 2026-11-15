@@ -5,6 +5,8 @@ import {
   COLORS,
   ROOMS,
   CORRIDORS,
+  MAP_WIDTH,
+  MAP_HEIGHT,
   roomAt,
   taskPoint,
   dist,
@@ -12,6 +14,18 @@ import {
 const $ = (s) => document.querySelector(s),
   app = $("#app"),
   modalRoot = $("#modal-root");
+const markupCache = new WeakMap();
+function setMarkup(selector, html) {
+  const el = $(selector);
+  if (el && markupCache.get(el) !== html) {
+    el.innerHTML = html;
+    markupCache.set(el, html);
+  }
+}
+function setText(selector, value) {
+  const el = $(selector);
+  if (el && el.textContent !== value) el.textContent = value;
+}
 const esc = (s) =>
   String(s ?? "").replace(
     /[&<>"']/g,
@@ -103,7 +117,7 @@ function rolesPage() {
   return `<div class="eyebrow">Экипаж с характером</div><h1 class="page-title">У каждого свой секрет.</h1><p class="page-sub">Двенадцать знакомых лиц на одном корабле.<br>Свою роль и её возможности ты узнаешь в начале полёта.</p><div class="filters"><span class="role-tag">12 СЕКРЕТНЫХ РОЛЕЙ</span></div><div class="all-roles">${ROLES.map((r, i) => `<article class="detail-role"><div class="role-top"><div class="role-avatar">${crewmate(COLORS[i], i === 1 ? "cap" : "")}</div><div><span class="role-tag">СЕКРЕТНАЯ РОЛЬ</span><h3>${r.name}</h3></div></div></article>`).join("")}</div>`;
 }
 function guide() {
-  return `<div class="eyebrow">Перед первым полётом</div><h1 class="page-title">Доверяй. Но проверяй.</h1><p class="page-sub">Создай комнату, отправь друзьям код и вместе отправляйтесь на орбиту.</p><div class="instruction-grid"><article class="instruction-card"><span class="step">01</span><h3>Займи своё место</h3><p>От 4 до 15 игроков, до 3 предателей. Выбери цвет костюма и имя. Капитан настраивает скорость и голосование. Не хватает своих? Добавь ботов.</p></article><article class="instruction-card"><span class="step">02</span><h3>Выполни свою миссию</h3><p>Мирные чинят проводку, выращивают подсолнухи и сортируют посылки. Заполните шкалу заданий или выгоните всех предателей. Призраки продолжают задания!</p></article><article class="instruction-card"><span class="step">03</span><h3>Найди чужого</h3><p>Заметил тело — сообщи. Обсуждайте в чате и голосуйте. Предатели побеждают, когда остаётся один мирный или взрывается реактор. На починку реактора есть 45 секунд.</p></article></div><div class="instruction-card" style="margin-top:20px"><h3>Панель управления</h3><p><span class="key">W A S D</span> / <span class="key">↑ ← ↓ →</span> — движение и направление взгляда &nbsp; <span class="key">E</span> — задание &nbsp; <span class="key">R</span> — сообщить о теле &nbsp; <span class="key">M</span> — карта<br>На телефоне используй стрелки и кнопки на экране. Люки находятся в левом нижнем углу комнат. Экстренная кнопка — на Площади Свессы.<br>У всех предателей: убийство с перезарядкой 20 секунд, вентиляция и три саботажа. После собраний действует защита от особых атак. Боты умеют ходить, выполнять задания, убивать и сообщать о телах; обсуждения — за людьми.</p><button class="btn" data-action="practice">Попробовать с ботами ↗</button></div>`;
+  return `<div class="eyebrow">Перед первым полётом</div><h1 class="page-title">Доверяй. Но проверяй.</h1><p class="page-sub">Создай комнату, отправь друзьям код и вместе отправляйтесь на орбиту.</p><div class="instruction-grid"><article class="instruction-card"><span class="step">01</span><h3>Займи своё место</h3><p>От 4 до 15 игроков, до 3 предателей. Выбери цвет костюма и имя. Капитан настраивает скорость и голосование. Не хватает своих? Добавь ботов.</p></article><article class="instruction-card"><span class="step">02</span><h3>Выполни свою миссию</h3><p>Мирные чинят проводку, поливают огурцы и собирают борщ. Заполните шкалу заданий или выгоните всех предателей. Призраки продолжают задания!</p></article><article class="instruction-card"><span class="step">03</span><h3>Найди чужого</h3><p>Заметил тело — сообщи. Обсуждайте в чате и голосуйте. Предатели побеждают, когда остаётся один мирный или взрывается реактор. На починку реактора есть 45 секунд.</p></article></div><div class="instruction-card" style="margin-top:20px"><h3>Панель управления</h3><p><span class="key">W A S D</span> / <span class="key">↑ ← ↓ →</span> — движение и направление взгляда &nbsp; <span class="key">E</span> — задание &nbsp; <span class="key">R</span> — сообщить о теле &nbsp; <span class="key">M</span> — карта<br>На телефоне используй стрелки и кнопки на экране. Люки находятся в левом нижнем углу комнат. Экстренная кнопка — на центральном посту.<br>У всех предателей: убийство с перезарядкой 20 секунд, вентиляция и три саботажа. После собраний действует защита от особых атак. Боты умеют ходить, выполнять задания, убивать и сообщать о телах; обсуждения — за людьми.</p><button class="btn" data-action="practice">Попробовать с ботами ↗</button></div>`;
 }
 function roomsPage() {
   return `<div class="eyebrow">Ищем своих</div><h1 class="page-title">Открытый космос. Открытые комнаты.</h1><p class="page-sub">Присоединяйся к экипажу или собери собственный.</p><div style="display:flex;gap:12px;margin-bottom:25px"><button class="btn" data-action="create">⊞ Создать комнату</button><button class="btn secondary" data-action="refresh">Обновить ↻</button></div><div id="public-rooms"><p class="hint">Проверяем связь с кораблями…</p></div>`;
@@ -120,7 +134,7 @@ function render() {
       : page === "guide"
         ? guide()
         : page === "map"
-          ? `<div class="eyebrow">СВЕССА–01 / план палубы</div><h1 class="page-title">Родные места. Новая высота.</h1><p class="page-sub">7 отсеков, вентиляционная сеть и одна кнопка, которую лучше не трогать без причины.</p><canvas id="map-preview" class="map-preview"></canvas>`
+          ? `<div class="eyebrow">СВЕССА НАСОС–1 / план палубы</div><h1 class="page-title">Родные места. Новая высота.</h1><p class="page-sub">8 отсеков, вентиляционная сеть и одна кнопка, которую лучше не трогать без причины.</p><canvas id="map-preview" class="map-preview"></canvas>`
           : page === "rooms"
             ? roomsPage()
             : home(),
@@ -405,16 +419,23 @@ function updateHud() {
     r = ROLE(me.role),
     imp = r.team === "imp",
     t = time();
-  $("#progress-number").textContent = `${Math.round(state.progress)}%`;
-  $("#progress-fill").style.width = `${state.progress}%`;
-  $("#game-identity").innerHTML =
-    `<strong style="color:${imp ? "#f4907e" : "#b4cca8"}">${esc(me.name)} · ${r.name}${!me.alive ? " 👻" : ""}</strong><small>${me.rocket ? "УПРАВЛЯЙ РАКЕТОЙ · WASD" : !me.alive ? "ПРИЗРАК · ПОМОГИ С ЗАДАНИЯМИ" : imp ? "ПРЕДАТЕЛЬ · НЕ ВЫДАЙ СЕБЯ" : "ЭКИПАЖ · КУРС НА ДОМ"}</small>`;
-  $("#task-list").innerHTML =
-    `<h3>${imp ? "ТВОЯ МИССИЯ" : "ТВОИ ЗАДАНИЯ"}</h3>${imp ? "<p>Устрани экипаж или взорви реактор. Твои союзники отмечены красным.</p>" : me.tasks.map((q) => `<p class="${q.done ? "done" : ""}">${q.done ? "✓" : "◇"} ${ROOMS.find((r) => r.id === q.room)?.task}</p>`).join("")}${me.armor > t ? '<p style="color:#a7cfed">◇ Броня активна ' + Math.ceil((me.armor - t) / 1000) + "с</p>" : ""}${me.role === "farmer" ? `<p>Ошибки: ${me.misses || 0} / 3</p>` : ""}`;
-  $("#role-help").innerHTML =
-    `<strong style="color:#d5dcd7">${r.name}</strong><br>${r.desc}<br><span style="color:#6e8494">WASD — ходить · E — задание · M — карта</span>`;
-  $("#location").textContent =
-    roomAt(me.x, me.y)?.name || "СОЕДИНИТЕЛЬНЫЙ КОРИДОР";
+  setText("#progress-number", `${Math.round(state.progress)}%`);
+  const progressWidth = `${state.progress}%`;
+  if ($("#progress-fill").style.width !== progressWidth)
+    $("#progress-fill").style.width = progressWidth;
+  setMarkup(
+    "#game-identity",
+    `<strong style="color:${imp ? "#f4907e" : "#b4cca8"}">${esc(me.name)} · ${r.name}${!me.alive ? " 👻" : ""}</strong><small>${me.rocket ? "УПРАВЛЯЙ РАКЕТОЙ · WASD" : !me.alive ? "ПРИЗРАК · ПОМОГИ С ЗАДАНИЯМИ" : imp ? "ПРЕДАТЕЛЬ · НЕ ВЫДАЙ СЕБЯ" : "ЭКИПАЖ · КУРС НА ДОМ"}</small>`,
+  );
+  setMarkup(
+    "#task-list",
+    `<h3>${imp ? "ТВОЯ МИССИЯ" : "ТВОИ ЗАДАНИЯ"}</h3>${imp ? "<p>Устрани экипаж или взорви реактор. Твои союзники отмечены красным.</p>" : me.tasks.map((q) => `<p class="${q.done ? "done" : ""}">${q.done ? "✓" : "◇"} ${ROOMS.find((r) => r.id === q.room)?.task}</p>`).join("")}${me.armor > t ? '<p style="color:#a7cfed">◇ Броня активна ' + Math.ceil((me.armor - t) / 1000) + "с</p>" : ""}${me.role === "farmer" ? `<p>Ошибки: ${me.misses || 0} / 3</p>` : ""}`,
+  );
+  setMarkup(
+    "#role-help",
+    `<strong style="color:#d5dcd7">${r.name}</strong><br>${r.desc}<br><span style="color:#6e8494">WASD — ходить · E — задание · M — карта</span>`,
+  );
+  setText("#location", roomAt(me.x, me.y)?.name || "СОЕДИНИТЕЛЬНЫЙ КОРИДОР");
   const actionButton = (key, name, style = "", cd = 0, sym = "") =>
     `<button class="action ${style}" data-game="${key}" aria-label="${name}${cd > 0 ? `, перезарядка ${cd} секунд` : ""}" ${cd > 0 ? "disabled" : ""}><span class="action-orb"><span class="action-symbol">${sym || symbols[key] || "✦"}</span>${cd > 0 ? `<small class="action-cooldown">${cd}</small>` : ""}</span><span class="action-label">${name}</span></button>`;
   let buttons = "";
@@ -478,13 +499,17 @@ function updateHud() {
     )
   )
     buttons += actionButton("task", "Задание", "gold", 0, "▣");
-  if ($("#game-actions").innerHTML !== buttons)
-    $("#game-actions").innerHTML = buttons;
-  $("#reactor-alert").innerHTML = state.sabotage
-    ? `<div class="reactor-alert">⚠ Реактор: ${Math.max(0, Math.ceil((state.sabotage.until - t) / 1000))}с · Срочно в отсек «Сумы»</div>`
-    : "";
-  $("#flash-root").innerHTML =
-    me.blindUntil > t ? '<div class="flash"></div>' : "";
+  setMarkup("#game-actions", buttons);
+  setMarkup(
+    "#reactor-alert",
+    state.sabotage
+      ? `<div class="reactor-alert">⚠ Реактор: ${Math.max(0, Math.ceil((state.sabotage.until - t) / 1000))}с · Срочно в машинный отсек</div>`
+      : "",
+  );
+  setMarkup(
+    "#flash-root",
+    me.blindUntil > t ? '<div class="flash"></div>' : "",
+  );
 }
 function chooseRoom(kind) {
   openModal(
@@ -521,7 +546,7 @@ function gameAction(key) {
   if (key === "sabotage") {
     openModal(
       "Системы корабля",
-      `<p class="hint">Один саботаж каждые 30 секунд. Реактор взорвётся через 45 сек, если его не починят.</p><div style="display:grid;gap:12px"><button class="btn secondary" data-sabotage="lights">ϟ Отключить электричество</button><button class="btn danger" data-sabotage="reactor">⚠ Повредить реактор «Сумы»</button><button class="btn secondary" data-sabotage="doors">▥ Закрыть двери на 10 секунд</button></div>`,
+      `<p class="hint">Один саботаж каждые 30 секунд. Реактор взорвётся через 45 сек, если его не починят.</p><div style="display:grid;gap:12px"><button class="btn secondary" data-sabotage="lights">ϟ Отключить электричество</button><button class="btn danger" data-sabotage="reactor">⚠ Повредить реактор «Свеснасос»</button><button class="btn secondary" data-sabotage="doors">▥ Закрыть двери на 10 секунд</button></div>`,
     );
     return;
   }
@@ -592,7 +617,7 @@ function drawTask() {
   } else {
     const icons =
       t.room === "greenhouse"
-        ? ["💧", "🌻", "☀", "🌱"]
+        ? ["💧", "🥒", "☀", "🌱"]
         : t.room === "bridge"
           ? ["↑", "→", "↓", "←"]
           : t.room === "kitchen"
@@ -615,22 +640,23 @@ function renderMeeting() {
   }
   const m = state.meeting,
     me = state.players.find((p) => p.id === myId);
-  $("#meeting-timer").textContent =
-    `${Math.max(0, Math.ceil((m.until - time()) / 1000))} сек`;
+  setText(
+    "#meeting-timer",
+    `${Math.max(0, Math.ceil((m.until - time()) / 1000))} сек`,
+  );
   const grid = state.players
     .map(
       (p) =>
         `<div class="meeting-player" style="opacity:${p.alive ? 1 : 0.35}">${crewmate(COLORS[p.color])}<span>${esc(p.name)}${p.id === myId ? " (ты)" : ""}<small style="display:block;font-size:9px;color:#778d9c">${!p.alive ? "ВЫБЫЛ" : m.votes.includes(p.id) ? "ГОЛОС ПРИНЯТ" : "НА БОРТУ"}</small></span>${p.alive && me.alive && !m.mine ? `<button class="btn secondary" data-vote="${p.id}" style="padding:8px;font-size:10px">Выбрать</button>` : ""}</div>`,
     )
     .join("");
-  if ($("#vote-grid").innerHTML !== grid) $("#vote-grid").innerHTML = grid;
+  setMarkup("#vote-grid", grid);
   const footer = m.mine
     ? '<p class="hint">Твой голос принят. Ждём экипаж.</p>'
     : me.alive
       ? '<button class="btn secondary full" data-vote="skip">Пропустить голосование</button>'
       : '<p class="hint">Призраки наблюдают за голосованием.</p>';
-  if ($("#vote-footer").innerHTML !== footer)
-    $("#vote-footer").innerHTML = footer;
+  setMarkup("#vote-footer", footer);
   updateChat();
 }
 function endDialog() {
@@ -708,133 +734,175 @@ function drawPerson(c, p, ghost = false) {
   c.restore();
   c.restore();
 }
-function drawRoom(c, r, t) {
+// The deck geometry is painted once; live markers and characters remain dynamic.
+let deckCache = null;
+function drawRoom(c, r) {
+  const { x, y, w, h } = r;
   c.save();
-  c.lineWidth = 3;
-  rounded(c, r.x - 7, r.y - 7, r.w + 14, r.h + 14, 20, "#263f4d", "#58717c");
-  rounded(c, r.x, r.y, r.w, r.h, 14, "#172c3b");
+  c.lineWidth = 4;
+  rounded(c, x - 8, y - 8, w + 16, h + 16, 16, "#131e26", "#819099");
+  rounded(c, x, y, w, h, 11, "#314651", "#1b2b33");
   c.save();
   c.beginPath();
-  c.roundRect(r.x + 4, r.y + 4, r.w - 8, r.h - 8, 12);
+  c.roundRect(x + 3, y + 3, w - 6, h - 6, 9);
   c.clip();
-  c.strokeStyle = "#294350";
+  c.fillStyle = r.color + "90";
+  c.fillRect(x, y, w, h);
+  c.strokeStyle = "#0b182426";
   c.lineWidth = 1;
-  for (let x = r.x; x < r.x + r.w; x += 40) {
+  for (let gx = x; gx < x + w; gx += 35) {
     c.beginPath();
-    c.moveTo(x, r.y);
-    c.lineTo(x, r.y + r.h);
+    c.moveTo(gx, y);
+    c.lineTo(gx, y + h);
     c.stroke();
   }
-  for (let y = r.y; y < r.y + r.h; y += 40) {
+  for (let gy = y; gy < y + h; gy += 35) {
     c.beginPath();
-    c.moveTo(r.x, y);
-    c.lineTo(r.x + r.w, y);
+    c.moveTo(x, gy);
+    c.lineTo(x + w, gy);
     c.stroke();
   }
-  c.fillStyle = r.color + "45";
-  c.fillRect(r.x, r.y, r.w, 36);
+  c.fillStyle = "#0f1c27db";
+  c.fillRect(x, y, w, 32);
   c.restore();
-  c.fillStyle = "#c0d0d4";
+  c.fillStyle = "#e3e4d8";
+  c.font = "bold 12px sans-serif";
   c.textAlign = "left";
-  c.font = "600 12px Manrope, sans-serif";
-  c.fillText(r.name.toUpperCase(), r.x + 18, r.y + 24);
-  // Every compartment has its own equipment and a vent.
-  const x = r.x,
-    y = r.y,
-    w = r.w,
-    h = r.h;
+  c.fillText(r.name.toUpperCase(), x + 13, y + 21, w - 26);
   if (r.id === "bridge") {
-    rounded(c, x + 70, y + 50, w - 140, 55, 12, "#2e4e62", "#628690");
-    for (let i = 0; i < 3; i++) {
-      rounded(c, x + 85 + i * 51, y + 62, 36, 19, 3, "#7bb1ae");
-    }
-    rounded(c, x + 142, y + 135, 55, 40, 9, "#426375", "#77919a");
-  }
-  if (r.id === "kitchen") {
-    rounded(c, x + 20, y + 55, 55, 125, 6, "#546e6b", "#829384");
-    for (let i = 0; i < 3; i++) {
-      c.fillStyle = "#223e43";
-      c.beginPath();
-      c.arc(x + 47, y + 78 + i * 37, 11, 0, 7);
-      c.fill();
-    }
-    rounded(c, x + 96, y + 120, 105, 55, 8, "#7d6a4e", "#b3a278");
-    c.fillStyle = "#ce875a";
+    // The village council: desks, papers and an old monitor.
+    rounded(c, x + 35, y + 94, 150, 75, 4, "#a17b59", "#3e302b");
+    c.fillStyle = "#e4d1ad";
+    c.fillRect(x + 50, y + 108, 32, 24);
+    c.fillRect(x + 98, y + 123, 27, 20);
+    rounded(c, x + 142, y + 65, 64, 42, 5, "#273d46", "#a4bab2");
+    rounded(c, x + 150, y + 72, 48, 26, 2, "#8fbfc1");
+    rounded(c, x + 215, y + 124, 50, 52, 5, "#665140", "#302c2a");
+  } else if (r.id === "greenhouse") {
+    // Glass roof and rows of cucumbers and black-eyed flowers.
+    c.strokeStyle = "#b9ddd28a";
+    c.lineWidth = 5;
     c.beginPath();
-    c.arc(x + 145, y + 146, 19, 0, 7);
-    c.fill();
-    c.fillStyle = "#632c25";
-    c.beginPath();
-    c.arc(x + 145, y + 146, 14, 0, 7);
-    c.fill();
-  }
-  if (r.id === "greenhouse") {
+    c.ellipse(x + w / 2, y + 122, 145, 92, 0, Math.PI, 0);
+    c.stroke();
     for (let i = 0; i < 4; i++) {
-      rounded(c, x + 28 + i * 68, y + 100, 48, 100, 6, "#385f4f", "#597f5f");
-      for (let j = 0; j < 2; j++) {
-        c.fillStyle = "#a5b863";
-        c.beginPath();
-        c.arc(x + 52 + i * 68, y + 125 + j * 48, 13, 0, 7);
-        c.fill();
-        c.fillStyle = "#705a3c";
-        c.beginPath();
-        c.arc(x + 52 + i * 68, y + 125 + j * 48, 6, 0, 7);
-        c.fill();
-      }
-    }
-  }
-  if (r.id === "electric") {
-    for (let i = 0; i < 3; i++) {
-      rounded(c, x + 25 + i * 65, y + 100, 50, 105, 5, "#394c53", "#71817b");
-      c.fillStyle = i === 1 ? "#dfa75d" : "#8eb989";
-      c.fillRect(x + 40 + i * 65, y + 115, 20, 6);
+      rounded(c, x + 28 + i * 77, y + 122, 61, 95, 6, "#456d49", "#8b9d62");
       for (let j = 0; j < 3; j++) {
-        c.fillStyle = "#192d37";
-        c.fillRect(x + 35 + i * 65, y + 137 + j * 16, 30, 5);
+        c.fillStyle = j === 1 ? "#d3af51" : "#83ad59";
+        c.beginPath();
+        c.arc(x + 58 + i * 77, y + 140 + j * 24, 9, 0, 7);
+        c.fill();
+        c.fillStyle = "#5d552d";
+        c.beginPath();
+        c.arc(x + 58 + i * 77, y + 140 + j * 24, 3, 0, 7);
+        c.fill();
       }
     }
-  }
-  if (r.id === "reactor") {
-    const px = x + 150,
-      py = y + 145;
-    c.strokeStyle = "#5b658d";
-    c.lineWidth = 9;
-    c.beginPath();
-    c.ellipse(px, py, 70, 60, 0, 0, 7);
-    c.stroke();
-    c.fillStyle = state?.sabotage ? "#f4724e" : "#88c9bc";
-    c.shadowBlur = 22;
-    c.shadowColor = c.fillStyle;
-    c.beginPath();
-    c.arc(px, py, 34 + Math.sin(t / 500) * 3, 0, 7);
-    c.fill();
-    c.shadowBlur = 0;
-    c.lineWidth = 4;
-    c.strokeStyle = "#bdc9c5";
-    c.beginPath();
-    c.arc(px, py, 49, 0, 7);
-    c.stroke();
-  }
-  if (r.id === "cargo") {
-    for (let i = 0; i < 3; i++) {
+  } else if (r.id === "kitchen") {
+    rounded(c, x + 24, y + 44, w - 48, 42, 5, "#674e3b", "#b49670");
+    for (let i = 0; i < 6; i++) {
       rounded(
         c,
-        x + 65 + i * 72,
-        y + 110 + (i % 2) * 20,
-        55,
-        55,
-        5,
-        "#8f7950",
-        "#bea57a",
+        x + 37 + i * 43,
+        y + 51,
+        27,
+        27,
+        4,
+        i % 2 ? "#7a9d69" : "#b89b67",
+        "#363d30",
       );
-      c.fillStyle = "#c6ae78";
-      c.fillRect(x + 88 + i * 72, y + 112 + (i % 2) * 20, 8, 50);
-      c.fillStyle = "#403a2e";
-      c.font = "8px monospace";
-      c.fillText("УКР", x + 71 + i * 72, y + 140 + (i % 2) * 20);
     }
-  }
-  if (r.id === "square") {
+    rounded(c, x + 78, y + 112, 170, 87, 8, "#a47e56", "#4d382c");
+    c.fillStyle = "#eee1c2";
+    c.fillRect(x + 88, y + 122, 30, 18);
+    c.fillRect(x + 205, y + 165, 30, 18);
+    c.fillStyle = "#d5b187";
+    c.beginPath();
+    c.arc(x + 163, y + 150, 26, 0, 7);
+    c.fill();
+    c.fillStyle = "#862e2a";
+    c.beginPath();
+    c.arc(x + 163, y + 150, 20, 0, 7);
+    c.fill();
+  } else if (r.id === "electric") {
+    for (let i = 0; i < 3; i++) {
+      rounded(c, x + 25 + i * 65, y + 80, 50, 105, 5, "#435159", "#90a2a0");
+      c.fillStyle = i === 1 ? "#dfb35f" : "#8eb989";
+      c.fillRect(x + 40 + i * 65, y + 94, 20, 6);
+      for (let j = 0; j < 3; j++) {
+        c.fillStyle = "#1b3038";
+        c.fillRect(x + 35 + i * 65, y + 116 + j * 16, 30, 5);
+      }
+    }
+    c.strokeStyle = "#d69757";
+    c.lineWidth = 4;
+    c.beginPath();
+    c.moveTo(x + 20, y + 195);
+    c.lineTo(x + 225, y + 195);
+    c.lineTo(x + 225, y + 60);
+    c.stroke();
+  } else if (r.id === "reactor") {
+    c.strokeStyle = "#b77b45";
+    c.lineWidth = 10;
+    c.beginPath();
+    c.moveTo(x + 30, y + 95);
+    c.lineTo(x + 85, y + 95);
+    c.lineTo(x + 85, y + 185);
+    c.lineTo(x + 265, y + 185);
+    c.stroke();
+    rounded(c, x + 48, y + 115, 210, 55, 8, "#596967", "#9aa79c");
+    for (let i = 0; i < 3; i++) {
+      c.fillStyle = "#bca477";
+      c.beginPath();
+      c.arc(x + 86 + i * 63, y + 141, 19, 0, 7);
+      c.fill();
+      c.fillStyle = "#4a5650";
+      c.beginPath();
+      c.arc(x + 86 + i * 63, y + 141, 11, 0, 7);
+      c.fill();
+    }
+    rounded(c, x + 178, y + 49, 74, 40, 4, "#293c42", "#a7ae94");
+    c.fillStyle = "#d9bb72";
+    c.font = "bold 13px sans-serif";
+    c.fillText("НАСОС", x + 185, y + 74);
+  } else if (r.id === "cargo") {
+    // The airlock has a little home on board and the yellow-blue flag.
+    rounded(c, x + 48, y + 91, 185, 112, 3, "#9b805c", "#4c3e32");
+    c.fillStyle = "#734f3f";
+    c.beginPath();
+    c.moveTo(x + 28, y + 94);
+    c.lineTo(x + 140, y + 40);
+    c.lineTo(x + 252, y + 94);
+    c.closePath();
+    c.fill();
+    c.strokeStyle = "#45382d";
+    c.lineWidth = 4;
+    c.stroke();
+    rounded(c, x + 78, y + 116, 38, 37, 3, "#9ac5c8", "#50483a");
+    rounded(c, x + 160, y + 117, 38, 37, 3, "#9ac5c8", "#50483a");
+    c.fillStyle = "#5990b4";
+    c.fillRect(x + 262, y + 71, 38, 11);
+    c.fillStyle = "#e2c76c";
+    c.fillRect(x + 262, y + 82, 38, 11);
+    c.strokeStyle = "#d5dfcf";
+    c.lineWidth = 3;
+    c.beginPath();
+    c.moveTo(x + 261, y + 70);
+    c.lineTo(x + 261, y + 163);
+    c.stroke();
+  } else if (r.id === "medbay") {
+    rounded(c, x + 40, y + 85, 115, 65, 10, "#9ec3bd", "#d0e0d0");
+    rounded(c, x + 49, y + 92, 35, 50, 6, "#e4e6cf");
+    rounded(c, x + 182, y + 76, 80, 50, 6, "#293f4a", "#9ebeb8");
+    rounded(c, x + 191, y + 84, 62, 32, 4, "#7eb7ad");
+    c.fillStyle = "#d6e7da";
+    c.fillRect(x + 212, y + 91, 18, 5);
+    c.fillRect(x + 218, y + 85, 6, 18);
+    rounded(c, x + 181, y + 150, 102, 38, 6, "#6f9390", "#a3c5b9");
+  } else if (r.id === "square") {
+    rounded(c, x + 55, y + 49, 240, 49, 7, "#314b59", "#8ba3a4");
+    for (let i = 0; i < 4; i++)
+      rounded(c, x + 69 + i * 52, y + 56, 40, 30, 3, "#7eaaa6", "#294453");
     c.fillStyle = "#344f5a";
     c.beginPath();
     c.ellipse(840, 608, 69, 45, 0, 0, 7);
@@ -846,37 +914,129 @@ function drawRoom(c, r, t) {
     c.beginPath();
     c.ellipse(840, 597, 25, 16, 0, 0, 7);
     c.fill();
-    c.font = "9px monospace";
-    c.fillStyle = "#b9c9c5";
+    c.font = "9px sans-serif";
+    c.fillStyle = "#d6ded3";
     c.textAlign = "center";
     c.fillText("СОБРАНИЕ", 840, 650);
-    c.textAlign = "center";
     rounded(c, 926, 662, 50, 33, 6, "#5e3331", "#cb8066");
     c.fillStyle = "#ebba7d";
     c.font = "18px sans-serif";
     c.fillText("ϟ", 951, 686);
-    c.font = "8px monospace";
-    c.fillStyle = "#d0a38a";
+    c.font = "8px sans-serif";
     c.fillText("САБОТАЖ", 951, 710);
     c.textAlign = "left";
   }
   const vx = x + 55,
     vy = y + h - 50;
-  rounded(c, vx - 22, vy - 14, 44, 28, 5, "#0b1924", "#566f78");
+  rounded(c, vx - 22, vy - 14, 44, 28, 5, "#0b1924", "#9caeaa");
+  c.strokeStyle = "#5e7580";
+  c.lineWidth = 3;
   for (let i = 0; i < 4; i++) {
-    c.strokeStyle = "#445966";
-    c.lineWidth = 3;
     c.beginPath();
     c.moveTo(vx - 14 + i * 9, vy - 9);
     c.lineTo(vx - 14 + i * 9, vy + 9);
     c.stroke();
   }
-  if (r.id !== "square") {
-    const p = taskPoint(r),
-      me = state?.players.find((p) => p.id === myId),
-      active =
-        me?.tasks?.some((q) => q.room === r.id && !q.done) &&
-        ROLE(me.role).team === "crew";
+  c.restore();
+}
+function paintDeck(c) {
+  // Angular hull, engines and corridors echo the supplied ship plan.
+  c.save();
+  c.lineJoin = "round";
+  c.fillStyle = "#182b36";
+  c.strokeStyle = "#6c7e86";
+  c.lineWidth = 10;
+  c.beginPath();
+  c.moveTo(45, 485);
+  c.lineTo(115, 365);
+  c.lineTo(290, 365);
+  c.lineTo(325, 65);
+  c.lineTo(1025, 65);
+  c.lineTo(1080, 40);
+  c.lineTo(1470, 40);
+  c.lineTo(1510, 365);
+  c.lineTo(1700, 395);
+  c.lineTo(1735, 550);
+  c.lineTo(1700, 710);
+  c.lineTo(1090, 760);
+  c.lineTo(1090, 1135);
+  c.lineTo(275, 1100);
+  c.lineTo(260, 730);
+  c.lineTo(110, 710);
+  c.closePath();
+  c.fill();
+  c.stroke();
+  c.strokeStyle = "#b18b60";
+  c.lineWidth = 6;
+  c.beginPath();
+  c.moveTo(50, 500);
+  c.lineTo(12, 520);
+  c.lineTo(12, 560);
+  c.lineTo(50, 560);
+  c.moveTo(50, 585);
+  c.lineTo(12, 600);
+  c.lineTo(12, 635);
+  c.lineTo(50, 635);
+  c.stroke();
+  for (const r of CORRIDORS) {
+    rounded(c, r.x - 7, r.y - 7, r.w + 14, r.h + 14, 12, "#273f4f", "#687d84");
+    rounded(c, r.x, r.y, r.w, r.h, 5, "#52666b");
+    c.setLineDash([12, 15]);
+    c.strokeStyle = "#d1c69a88";
+    c.lineWidth = 2;
+    c.strokeRect(r.x + 12, r.y + 12, r.w - 24, r.h - 24);
+    c.setLineDash([]);
+  }
+  for (const r of ROOMS) drawRoom(c, r);
+  // Mark the passages through the room outlines.
+  c.fillStyle = "#728787";
+  for (const p of [
+    { x: 640, y: 199, w: 18, h: 52 },
+    { x: 685, y: 199, w: 18, h: 52 },
+    { x: 1013, y: 199, w: 18, h: 52 },
+    { x: 1093, y: 199, w: 18, h: 52 },
+    { x: 406, y: 584, w: 20, h: 52 },
+    { x: 663, y: 584, w: 20, h: 52 },
+    { x: 1013, y: 584, w: 20, h: 52 },
+    { x: 1313, y: 584, w: 20, h: 52 },
+    { x: 824, y: 343, w: 52, h: 18 },
+    { x: 824, y: 433, w: 52, h: 18 },
+    { x: 824, y: 733, w: 52, h: 18 },
+    { x: 824, y: 873, w: 52, h: 18 },
+    { x: 613, y: 949, w: 18, h: 52 },
+    { x: 693, y: 949, w: 18, h: 52 },
+  ])
+    c.fillRect(p.x, p.y, p.w, p.h);
+  c.restore();
+}
+function getDeck() {
+  if (!deckCache) {
+    deckCache = document.createElement("canvas");
+    deckCache.width = MAP_WIDTH;
+    deckCache.height = MAP_HEIGHT;
+    paintDeck(deckCache.getContext("2d"));
+  }
+  return deckCache;
+}
+function drawMarkers(c) {
+  const me = state?.players.find((p) => p.id === myId);
+  if (state?.sabotage) {
+    const reactor = ROOMS.find((room) => room.id === "reactor");
+    c.save();
+    c.strokeStyle = "#ff5e4dcc";
+    c.lineWidth = 5;
+    c.strokeRect(reactor.x + 8, reactor.y + 40, reactor.w - 16, reactor.h - 48);
+    c.restore();
+  }
+  for (const r of ROOMS) {
+    if (r.id === "square") continue;
+    const p = taskPoint(r);
+    const active =
+      me?.tasks?.some((q) => q.room === r.id && !q.done) &&
+      ROLE(me.role).team === "crew";
+    const repair =
+      (r.id === "electric" && state?.lights > time()) ||
+      (r.id === "reactor" && state?.sabotage);
     rounded(
       c,
       p.x - 22,
@@ -885,32 +1045,30 @@ function drawRoom(c, r, t) {
       34,
       5,
       "#304d5b",
-      active ? "#e6c86d" : "#778a8c",
+      active || repair ? "#f9df73" : "#778a8c",
     );
-    rounded(c, p.x - 15, p.y - 12, 30, 20, 3, active ? "#dbbe6e" : "#749b9b");
-    if (active) {
-      c.fillStyle = "#f4d985";
-      c.font = "bold 22px monospace";
+    rounded(
+      c,
+      p.x - 15,
+      p.y - 12,
+      30,
+      20,
+      3,
+      active || repair ? "#efcf72" : "#749b9b",
+    );
+    if (active || repair) {
+      c.fillStyle = "#ffe484";
+      c.font = "bold 22px sans-serif";
       c.textAlign = "center";
       c.fillText("!", p.x, p.y - 31);
       c.textAlign = "left";
     }
   }
-  c.restore();
 }
+
 function drawWorld(c, t, preview = false) {
-  c.lineJoin = "round";
-  c.lineWidth = 4;
-  for (const r of CORRIDORS) {
-    rounded(c, r.x - 7, r.y - 7, r.w + 14, r.h + 14, 15, "#273f4f", "#496371");
-    rounded(c, r.x, r.y, r.w, r.h, 9, "#1b303e");
-    c.setLineDash([12, 13]);
-    c.strokeStyle = "#51635d";
-    c.lineWidth = 1;
-    c.strokeRect(r.x + 15, r.y + 15, r.w - 30, r.h - 30);
-    c.setLineDash([]);
-  }
-  for (const r of ROOMS) drawRoom(c, r, t);
+  c.drawImage(getDeck(), 0, 0);
+  drawMarkers(c);
   if (state) {
     for (const q of state.puddles) {
       c.fillStyle = "#7a9e4c88";
@@ -995,23 +1153,36 @@ function drawWorld(c, t, preview = false) {
       c.restore();
     }
     if (state.doors > t) {
-      for (const x of [560, 1100]) {
-        rounded(c, x, 563, 16, 80, 3, "#b97457", "#e0aa75");
-        rounded(c, x, 178, 16, 70, 3, "#b97457", "#e0aa75");
-      }
+      for (const door of [
+        { x: 660, y: 575, w: 20, h: 70 },
+        { x: 1010, y: 575, w: 20, h: 70 },
+        { x: 815, y: 430, w: 70, h: 20 },
+        { x: 815, y: 730, w: 70, h: 20 },
+      ])
+        rounded(c, door.x, door.y, door.w, door.h, 3, "#b97457", "#e0aa75");
     }
   }
   c.textAlign = "left";
 }
+let starCache;
 function drawStars(c, w, h) {
-  c.fillStyle = "#080f17";
-  c.fillRect(0, 0, w, h);
-  for (const s of stars) {
-    c.fillStyle = `rgba(154,180,194,${s.r / 3})`;
-    c.beginPath();
-    c.arc(s.x * w, s.y * h, s.r, 0, 7);
-    c.fill();
+  const width = Math.ceil(w),
+    height = Math.ceil(h);
+  if (!starCache || starCache.width !== width || starCache.height !== height) {
+    starCache = document.createElement("canvas");
+    starCache.width = width;
+    starCache.height = height;
+    const bg = starCache.getContext("2d");
+    bg.fillStyle = "#080f17";
+    bg.fillRect(0, 0, width, height);
+    for (const s of stars) {
+      bg.fillStyle = `rgba(154,180,194,${s.r / 3})`;
+      bg.beginPath();
+      bg.arc(s.x * width, s.y * height, s.r, 0, 7);
+      bg.fill();
+    }
   }
+  c.drawImage(starCache, 0, 0, w, h);
 }
 function setupCanvas(el) {
   const dpr = Math.min(devicePixelRatio || 1, 2),
@@ -1032,9 +1203,12 @@ function drawMapPreview() {
   if (!el) return;
   const { c, w, h } = setupCanvas(el);
   drawStars(c, w, h);
-  const scale = Math.min(w / 1600, h / 1200);
+  const scale = Math.min(w / (MAP_WIDTH + 60), h / (MAP_HEIGHT + 60));
   c.save();
-  c.translate(w / 2 - 855 * scale, h / 2 - 580 * scale);
+  c.translate(
+    w / 2 - (MAP_WIDTH / 2) * scale,
+    h / 2 - (MAP_HEIGHT / 2) * scale,
+  );
   c.scale(scale, scale);
   drawWorld(c, time(), true);
   c.restore();
@@ -1053,10 +1227,10 @@ function frame() {
       : null,
     focus = missile || drawPositions.get(myId) || me;
   const scale = showMap
-    ? Math.min(w / 1650, h / 1250)
+    ? Math.min(w / (MAP_WIDTH + 60), h / (MAP_HEIGHT + 60))
     : Math.max(0.65, Math.min(1.15, w / 1200));
-  const camX = showMap ? 855 : focus.x,
-    camY = showMap ? 580 : focus.y;
+  const camX = showMap ? MAP_WIDTH / 2 : focus.x,
+    camY = showMap ? MAP_HEIGHT / 2 : focus.y;
   cameraView = { scale, x: w / 2 - camX * scale, y: h / 2 - camY * scale };
   c.save();
   c.translate(w / 2 - camX * scale, h / 2 - camY * scale);
@@ -1084,7 +1258,11 @@ function frame() {
     c.fillStyle = "#d9ceac";
     c.font = "12px Manrope";
     c.textAlign = "center";
-    c.fillText("ПЛАН КОРАБЛЯ · M, чтобы закрыть", w / 2, h - 35);
+    c.fillText(
+      "ПЛАН КОРАБЛЯ · кнопка карты или M, чтобы закрыть",
+      w / 2,
+      h - 35,
+    );
     c.textAlign = "left";
   }
 }

@@ -7,7 +7,7 @@
     "start": "node server.mjs",
     "dev": "node --watch server.mjs",
     "test": "node --test test/*.test.mjs",
-    "check": "node --check server.mjs && node --check engine.mjs && node --check public/app.js && node --check public/motion.js && node --check public/shared.js && node --check netlify/server/index.mjs"
+    "check": "node --check server.mjs && node --check engine.mjs && node --check navigation.mjs && node --check public/app.js && node --check public/motion.js && node --check public/shared.js && node --check netlify/server/index.mjs"
   },
   "engines": {
     "node": ">=22"

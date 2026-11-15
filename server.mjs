@@ -223,7 +223,14 @@ setInterval(() => {
   for (const r of rooms.values()) tick(r, t);
   for (const [ws, c] of clients) {
     const r = rooms.get(c.room);
-    if (r) {
+    if (
+      r &&
+      ws.readyState === WebSocket.OPEN &&
+      ws.bufferedAmount < 65536 &&
+      (r.phase === "game" ||
+        c.lastPhase !== r.phase ||
+        t - (c.lastState || 0) >= 250)
+    ) {
       const state = view(r, c.id, t);
       state.chat = state.chat.filter(
         (m) =>
@@ -232,6 +239,8 @@ setInterval(() => {
           !r.players.find((p) => p.id === c.id)?.alive,
       );
       send(ws, { type: "state", state });
+      c.lastState = t;
+      c.lastPhase = r.phase;
     }
   }
 }, 50);

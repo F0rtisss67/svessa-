@@ -1,3 +1,4 @@
+import { findPath } from "./navigation.mjs";
 import { randomInt, randomUUID } from "node:crypto";
 import {
   ROOMS,
@@ -153,6 +154,8 @@ export function start(r, t = now()) {
       rocket: null,
       challenge: null,
       botPath: null,
+      botLast: null,
+      botStuck: 0,
       botNext: t + 1000,
     });
   }
@@ -372,7 +375,7 @@ export function action(r, p, a, t = now()) {
     );
   } else if (a.type === "meeting") {
     if (dist(p, { x: 840, y: 600 }) > 110)
-      throw Error("Кнопка собрания в центре Площади Свессы.");
+      throw Error("Кнопка собрания на центральном посту.");
     if (!p.emergencies) throw Error("Ты уже созывал собрание.");
     if (r.sabotage) throw Error("Сначала почините реактор!");
     p.emergencies--;
@@ -625,32 +628,12 @@ function botThink(r, p, t) {
       imp || !tasks.length
         ? ROOMS[randomInt(ROOMS.length)]
         : ROOMS.find((q) => q.id === tasks[0].room);
-    const src = roomAt(p.x, p.y);
-    const sy = src
-      ? src.y < 400
-        ? 210
-        : src.y > 800
-          ? 980
-          : 600
-      : Math.abs(p.y - 210) < 100
-        ? 210
-        : Math.abs(p.y - 980) < 100
-          ? 980
-          : 600;
-    const ty = dest.y < 400 ? 210 : dest.y > 800 ? 980 : 600;
-    p.botPath = [];
-    if (src)
-      p.botPath.push(
-        { x: src.x + src.w / 2, y: src.y + src.h / 2 },
-        { x: src.x + src.w / 2, y: sy },
-      );
-    p.botPath.push(
-      { x: 840, y: sy },
-      { x: 840, y: ty },
-      { x: dest.x + dest.w / 2, y: ty },
-      { x: dest.x + dest.w / 2, y: dest.y + dest.h / 2 },
-      taskPoint(dest),
-    );
+    p.botPath = findPath(p, taskPoint(dest));
+    if (!p.botPath.length) {
+      p.dx = 0;
+      p.dy = 0;
+      return;
+    }
   }
   const goal = p.botPath[0];
   if (goal) {
@@ -687,7 +670,18 @@ export function tick(r, t = now()) {
   r.walls = r.walls.filter((w) => w.until > t);
   r.puddles = r.puddles.filter((w) => w.until > t);
   for (const p of r.players) {
-    if (p.bot && t > p.botNext - 15000) botThink(r, p, t);
+    if (p.bot && t > p.botNext - 15000) {
+      // Retry after temporary doors or a player-built wall stop a bot.
+      if (p.botLast && dist(p, p.botLast) < 1 && Math.hypot(p.dx, p.dy) > 0.1) {
+        p.botStuck = (p.botStuck || 0) + dt;
+        if (p.botStuck > 2) {
+          p.botPath = null;
+          p.botStuck = 0;
+        }
+      } else p.botStuck = 0;
+      p.botLast = { x: p.x, y: p.y };
+      botThink(r, p, t);
+    }
     if (r.phase !== "game") return;
     if (p.rocket) continue;
     let speed = 185 * r.settings.speed;
@@ -773,10 +767,11 @@ export function view(r, id, t = now()) {
       id: p.id,
       name: p.name,
       color: p.color,
-      x: p.x,
-      y: p.y,
-      fx: p.fx,
-      fy: p.fy,
+      // Server physics remain full precision; snapshots need sub-pixel accuracy only.
+      x: Math.round(p.x * 10) / 10,
+      y: Math.round(p.y * 10) / 10,
+      fx: Math.round(p.fx * 1000) / 1000,
+      fy: Math.round(p.fy * 1000) / 1000,
       alive: p.alive,
       connected: p.connected,
       bot: p.bot,
