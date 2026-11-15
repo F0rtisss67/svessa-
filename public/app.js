@@ -272,7 +272,7 @@ function send(obj) {
 }
 function connect() {
   ws = new WebSocket(
-    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`,
+    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/socket`,
   );
   ws.onopen = () => {
     socketStatus = "open";

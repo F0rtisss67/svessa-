@@ -1,0 +1,10 @@
+[build]
+  publish = "public"
+
+[server]
+  region = "fra"
+  size = "small"
+  includedFiles = ["public/**"]
+
+[server.scale]
+  max = 1

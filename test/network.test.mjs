@@ -39,7 +39,7 @@ test("real WebSocket clients create, join, authorize, chat, start, vote and migr
         setTimeout(() => reject(Error("Server start timeout")), 4000).unref(),
       ),
     ]);
-    const a = new WebSocket(`ws://127.0.0.1:${port}`);
+    const a = new WebSocket(`ws://127.0.0.1:${port}/socket`);
     sockets.push(a);
     await once(a, "open");
     const joined = await command(

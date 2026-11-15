@@ -17,7 +17,19 @@ npm start
 
 Для игры в локальной сети друзья открывают http://IP-КОМПЬЮТЕРА:3000. Для игры через интернет сначала опубликуйте сервер. Открытие index.html напрямую и статические хостинги без WebSocket-сервера для этой версии не подходят.
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:74b5f8e22c3bafdabd3089e20eb1c6f9eb83898448d01baad42ef03ca68c71e8 -->
+
+## Публикация на Netlify
+
+Игра подготовлена для Netlify Server в регионе Frankfurt (fra). Подключите этот GitHub-репозиторий к проекту Netlify и выберите рабочую ветку. Node.js 24 задаётся файлом .node-version; каталог сайта — public. Файл netlify.toml задаёт один сервер и регион. Netlify Server находится в раннем доступе; проверьте доступность и тариф в своём аккаунте перед публикацией.
+
+Сервер хранит комнаты в памяти. После перезапуска они удаляются. В раннем доступе Netlify закрывает WebSocket-соединения по истечении лимита длительности запроса (на Free до 30 минут); повторное соединение не восстанавливает матч. Сервер засыпает после 5 минут без запросов и открытых соединений. Текущее ценообразование и ограничения: [Netlify Server](https://docs.netlify.com/build/server/), [ограничения](https://docs.netlify.com/build/server/limits/), [регионы](https://docs.netlify.com/build/server/configuration/#region).
+
 ## Бесплатная публикация на Render
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 В репозитории есть render.yaml. Добавьте исходники в GitHub, затем в панели Render создайте Blueprint из этого репозитория. Проверьте, что выбран тариф Free. Альтернатива: создайте Web Service с runtime Node, Build Command: npm ci --omit=dev, Start Command: npm start и Health Check Path: /health. Секретов и API-ключей игра не требует.
 
