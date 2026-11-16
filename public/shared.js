@@ -153,8 +153,8 @@ export const ROOMS = [
     w: 320,
     h: 240,
     color: "#76604e",
-    task: "Перезапустить зависший монитор",
-    kind: "route",
+    task: "Сбить астероиды",
+    kind: "asteroids",
   },
   {
     id: "greenhouse",
@@ -165,7 +165,7 @@ export const ROOMS = [
     h: 260,
     color: "#456c50",
     task: "Полить огурцы",
-    kind: "tap",
+    kind: "waterplants",
   },
   {
     id: "kitchen",
@@ -209,7 +209,7 @@ export const ROOMS = [
     h: 250,
     color: "#5e497f",
     task: "Стабилизировать насос",
-    kind: "tap",
+    kind: "pump",
   },
   {
     id: "cargo",
@@ -219,8 +219,8 @@ export const ROOMS = [
     w: 350,
     h: 260,
     color: "#765c45",
-    task: "Принять груз из Свессы",
-    kind: "order",
+    task: "Выбросить мусор через шлюз",
+    kind: "trash",
   },
   {
     id: "medbay",
@@ -230,8 +230,8 @@ export const ROOMS = [
     w: 370,
     h: 230,
     color: "#436b70",
-    task: "Протереть стеклянные кинескопы",
-    kind: "tap",
+    task: "Пройти сканирование",
+    kind: "scan",
   },
   {
     id: "radio",

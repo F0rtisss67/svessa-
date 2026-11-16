@@ -653,20 +653,34 @@ function gameAction(key) {
 let taskData,
   taskStarted,
   taskIndex = 0,
-  wireLeft = null;
+  wireLeft = null,
+  taskHits = new Set();
 function taskDialog(task) {
   taskData = task;
   taskStarted = performance.now();
   taskIndex = 0;
   wireLeft = null;
+  taskHits = new Set();
   const room = ROOMS.find((r) => r.id === task.room);
   openModal(
     room.task,
-    `<p class="hint">${task.kind === "wires" ? "Соедини пары одного цвета: сначала левый провод, затем правый." : task.kind === "order" ? "Повтори последовательность символов слева направо." : "Нажимай подсвеченную кнопку. Все пять систем должны ответить."}</p><div class="task-area" id="task-area"></div><p class="hint" id="task-status" style="text-align:center">0 / ${task.sequence.length}</p>`,
+    `<p class="hint">${task.kind === "asteroids" ? "Наведи прицел и сбей все астероиды." : task.kind === "trash" ? "Потяни рычаг до конца, чтобы открыть шлюз и выбросить мусор." : task.kind === "scan" ? "Стой на платформе, пока сканер проверяет костюм." : task.kind === "waterplants" ? "Открой подачу воды и наполни лейку для огурцов." : task.kind === "pump" ? "Установи стрелку на зелёную отметку и закрепи настройку." : task.kind === "wires" ? "Соедини пары одного цвета: сначала левый провод, затем правый." : task.kind === "order" ? "Повтори последовательность символов слева направо." : "Нажимай подсвеченную кнопку. Все пять систем должны ответить."}</p><div class="task-area" id="task-area"></div><p class="hint" id="task-status" style="text-align:center">0 / ${task.sequence.length}</p>`,
     false,
     "task",
   );
   drawTask();
+  if (task.kind === "scan") {
+    const scan = taskData;
+    const updateScan = () => {
+      if (modalType !== "task" || taskData !== scan || !$("#scan-progress")) return;
+      const progress = Math.min(100, (performance.now() - taskStarted) / 5100 * 100);
+      $("#scan-progress").style.width = `${progress}%`;
+      $("#task-status").textContent = `Сканирование: ${Math.floor(progress)}%`;
+      if (progress >= 100) { taskIndex = taskData.sequence.length; drawTask(); }
+      else setTimeout(updateScan, 100);
+    };
+    updateScan();
+  }
 }
 function drawTask() {
   const area = $("#task-area");
@@ -682,6 +696,22 @@ function drawTask() {
       setTimeout(() => {
         if (finish.isConnected) finish.disabled = false;
       }, wait);
+    return;
+  }
+  if (t.kind === "scan") {
+    area.innerHTML = `<div class="scanner"><div class="scan-grid"></div><div class="scan-person"><span></span></div><div class="scan-beam"></div></div><div class="mini-meter"><div id="scan-progress"></div></div>`;
+    return;
+  }
+  if (t.kind === "asteroids") {
+    const positions = [[8,12],[36,5],[68,14],[18,45],[52,39],[79,51],[34,76],[69,78]];
+    area.innerHTML = `<div class="asteroid-field" aria-label="Поле астероидов">${positions.map(([x,y],i) => taskHits.has(i) ? "" : `<button class="asteroid" data-asteroid="${i}" style="left:${x}%;top:${y}%;animation-delay:-${i * .4}s" aria-label="Сбить астероид ${i+1}"></button>`).join("")}<div class="crosshair">＋</div></div>`;
+    $("#task-status").textContent = `Сбито: ${taskHits.size} / 8`;
+    return;
+  }
+  if (["trash", "waterplants", "pump"].includes(t.kind)) {
+    const scene = t.kind === "trash" ? `<div class="mini-scene trash-scene"><div class="hatch">🌻 📦 🍂</div><div class="stars-drift">✦ · ✧</div></div>` : t.kind === "waterplants" ? `<div class="mini-scene garden-scene"><div class="cloud-water">💧</div><div class="plants">🌱　🥒　🌱</div><div class="water-level"></div></div>` : `<div class="mini-scene pump-scene"><div class="pump-dial"><span>⚙</span></div><div class="pump-track"><i style="left:${t.target}%"></i><b id="pump-needle"></b></div></div>`;
+    area.innerHTML = `${scene}<label class="mini-control">${t.kind === "trash" ? "Рычаг шлюза" : t.kind === "waterplants" ? "Подача воды" : "Давление насоса"}<input id="task-range" type="range" min="0" max="100" value="0" aria-label="${t.kind === "trash" ? "Рычаг шлюза" : t.kind === "waterplants" ? "Подача воды" : "Давление насоса"}"></label>${t.kind === "pump" ? '<button class="btn" data-pump-confirm>Закрепить настройку</button>' : ""}`;
+    $("#task-status").textContent = t.kind === "pump" ? "Совмести стрелку с зелёной отметкой" : "Передвинь ползунок вправо";
     return;
   }
   if (t.kind === "wires") {
@@ -1421,6 +1451,18 @@ document.addEventListener("pointerup", (e) => {
   }
 });
 document.addEventListener("pointercancel", stopMovement);
+document.addEventListener("input", (e) => {
+  if (e.target.id !== "task-range" || modalType !== "task" || taskIndex >= taskData.sequence.length) return;
+  const value = Number(e.target.value);
+  const scene = $(".mini-scene");
+  scene?.style.setProperty("--level", value / 100);
+  if (taskData.kind === "pump") $("#pump-needle").style.left = `${value}%`;
+  if (["trash", "waterplants"].includes(taskData.kind) && value === 100) {
+    send({ type: "taskStep", room: taskData.room, value });
+    taskIndex = taskData.sequence.length;
+    setTimeout(() => { if (modalType === "task" && $("#task-range") === e.target) drawTask(); }, 650);
+  }
+});
 document.addEventListener("click", async (e) => {
   if (
     e.target.id === "game-canvas" &&
@@ -1524,6 +1566,24 @@ document.addEventListener("click", async (e) => {
   }
   if (b.dataset.vote) {
     send({ type: "vote", target: b.dataset.vote });
+    return;
+  }
+  if (b.dataset.asteroid !== undefined && modalType === "task" && taskData.kind === "asteroids") {
+    const hit = Number(b.dataset.asteroid);
+    if (!taskHits.has(hit)) {
+      taskHits.add(hit);
+      send({ type: "taskStep", room: taskData.room, value: hit });
+      if (taskHits.size === 8) taskIndex = taskData.sequence.length;
+      drawTask();
+    }
+    return;
+  }
+  if (b.hasAttribute("data-pump-confirm") && modalType === "task" && taskData.kind === "pump") {
+    const value = Number($("#task-range").value);
+    if (Math.abs(value - taskData.target) > 3) { toast("Стрелка должна попасть на зелёную отметку."); return; }
+    send({ type: "taskStep", room: taskData.room, value });
+    taskIndex = taskData.sequence.length;
+    drawTask();
     return;
   }
   if (b.dataset.taskChoice !== undefined) {

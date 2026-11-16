@@ -2131,3 +2131,44 @@ body:has(.role-reveal) #toast {
 .game-shell.map-open .task-list {
   display: none;
 }
+
+/* Task consoles: large controls work with touch, mouse and keyboard. */
+.mini-scene, .scanner, .asteroid-field {
+  position: relative;
+  height: 210px;
+  overflow: hidden;
+  border: 2px solid #55707b;
+  border-radius: 12px;
+  background: #10283a;
+}
+.mini-scene { --level: 0; display: grid; place-items: center; }
+.trash-scene { background: radial-gradient(circle at 75% 40%, #264d6d, #06101d 70%); }
+.hatch { padding: 35px 15px; font-size: 32px; border: 8px solid #72888c; border-radius: 18px; background: #223b49; transform: translateX(calc(var(--level) * 140px)); opacity: calc(1 - var(--level)); transition: transform .3s, opacity .3s; }
+.stars-drift { position: absolute; right: 10%; top: 20%; color: #b0d6dc; font-size: 26px; }
+.garden-scene { background: linear-gradient(#25485a, #557855); }
+.plants { position: relative; z-index: 2; font-size: 46px; }
+.cloud-water { position: absolute; top: 15px; font-size: 30px; opacity: var(--level); }
+.water-level { position: absolute; bottom: 0; width: 100%; height: calc(var(--level) * 35%); background: #5dbed178; transition: height .2s; }
+.pump-scene { background: radial-gradient(circle, #355368, #111d29); }
+.pump-dial { font-size: 70px; color: #e4b96e; }
+.pump-track { position: absolute; bottom: 24px; left: 12%; width: 76%; height: 12px; border-radius: 10px; background: #65737a; }
+.pump-track i, .pump-track b { position: absolute; top: -8px; transform: translateX(-50%); }
+.pump-track i { width: 7%; height: 28px; background: #8bdba8; border-radius: 4px; }
+.pump-track b { left: 0; width: 4px; height: 28px; background: #ffcf78; }
+.mini-control { display: block; margin: 14px 0 4px; color: #c9dfd8; }
+.mini-control input { display: block; width: 100%; margin: 12px 0; accent-color: #eaca70; touch-action: pan-x; }
+.scanner { background: radial-gradient(ellipse at 50% 90%, #4c8f8d, #122b38 70%); }
+.scan-grid { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 30px, #91dbd414 31px 32px), repeating-linear-gradient(transparent 0 30px, #91dbd414 31px 32px); }
+.scan-person { position: absolute; width: 75px; height: 130px; left: calc(50% - 37px); bottom: 18px; border: 5px solid #a5e6d9; border-radius: 36px 36px 18px 18px; background: #60adab66; }
+.scan-person span { position: absolute; width: 48px; height: 27px; top: 22px; right: -8px; border: 4px solid #a5e6d9; border-radius: 12px; background: #b4f2eb; }
+.scan-beam { position: absolute; width: 100%; height: 4px; background: #b8fff2; box-shadow: 0 0 18px 7px #63ffe0; animation: scan-sweep 1.4s ease-in-out infinite alternate; }
+@keyframes scan-sweep { from { top: 10%; } to { top: 90%; } }
+.mini-meter { height: 12px; border-radius: 8px; background: #273c49; margin-top: 12px; overflow: hidden; }
+.mini-meter div { width: 0; height: 100%; background: #86ddb4; }
+.asteroid-field { background: radial-gradient(circle at 30% 20%, #294766, #071423 70%); }
+.task-area .asteroid { position: absolute; margin: 0; width: 44px; height: 44px; padding: 0; border: 3px solid #d8a57d; border-radius: 43% 57% 48% 52%; background: radial-gradient(circle at 33% 35%, #806259 0 13%, transparent 15%), radial-gradient(circle at 68% 67%, #6d504c 0 11%, transparent 13%), #a47c68; box-shadow: inset -5px -5px #614c4b, 0 0 8px #efb38955; cursor: crosshair; animation: asteroid-drift 2s ease-in-out infinite alternate; }
+.asteroid:focus-visible { outline: 2px solid #f7d46c; border-radius: 50%; }
+.crosshair { position: absolute; left: 47%; top: 42%; pointer-events: none; color: #a9e6d680; font-size: 35px; }
+@keyframes asteroid-drift { to { transform: translate(10px, -8px) rotate(20deg); } }
+@media (prefers-reduced-motion: reduce) { .asteroid, .scan-beam { animation: none !important; } }
+body:has(#task-area) #toast { top: 8px; }

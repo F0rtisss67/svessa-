@@ -326,7 +326,7 @@ export function action(r, p, a, t = now()) {
   if (r.phase !== "game") throw Error("Дождись начала игры.");
   const role = ROLE(p.role),
     imp = role.team === "imp";
-  if (a.type === "taskStart" || a.type === "taskSubmit") {
+  if (["taskStart", "taskStep", "taskSubmit"].includes(a.type)) {
     if (imp) throw Error("У предателей нет настоящих заданий.");
     const task = p.tasks.find((q) => q.room === a.room && !q.done),
       room = ROOMS.find((q) => q.id === a.room);
@@ -345,14 +345,26 @@ export function action(r, p, a, t = now()) {
           : Array.from({ length: room.kind === "order" ? 4 : 5 }, () =>
               randomInt(4),
             );
-      p.challenge = { room: a.room, sequence, started: t };
-      return { task: { room: a.room, kind: room.kind, sequence } };
+      const target = room.kind === "pump" ? 20 + randomInt(61) : null;
+      p.challenge = { room: a.room, sequence, started: t, kind: room.kind, steps: [], target };
+      return { task: { room: a.room, kind: room.kind, sequence, target } };
     }
     const c = p.challenge;
+    if (a.type === "taskStep") {
+      if (!c || c.room !== a.room) throw Error("Сначала открой задание.");
+      const value = a.value;
+      if (c.kind === "asteroids" && Number.isInteger(value) && value >= 0 && value < 8 && !c.steps.includes(value)) c.steps.push(value);
+      else if (["trash", "waterplants"].includes(c.kind) && value === 100 && !c.steps.length) c.steps.push(value);
+      else if (c.kind === "pump" && Number.isInteger(value) && Math.abs(value - c.target) <= 3 && !c.steps.length) c.steps.push(value);
+      else throw Error("Действие задания не подходит.");
+      return;
+    }
     if (
       !c ||
       c.room !== a.room ||
-      t - c.started < 1500 ||
+      t - c.started < (c.kind === "scan" ? 5000 : 1500) ||
+      (c.kind === "asteroids" && c.steps.length !== 8) ||
+      (["trash", "waterplants", "pump"].includes(c.kind) && c.steps.length !== 1) ||
       JSON.stringify(c.sequence) !== JSON.stringify(a.sequence)
     )
       throw Error("Задание ещё не выполнено.");

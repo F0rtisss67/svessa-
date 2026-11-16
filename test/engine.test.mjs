@@ -92,7 +92,7 @@ test("knees silently invert task progress and require actual task challenge", ()
     undefined,
   );
   r.progress = 50;
-  const task = q.tasks[0],
+  const task = q.tasks.find((item) => ["wires", "order"].includes(ROOMS.find((room) => room.id === item.room).kind)),
     room = ROOMS.find((x) => x.id === task.room);
   Object.assign(q, taskPoint(room));
   assert.throws(() =>
@@ -419,4 +419,35 @@ test("eight different assignments per crew member fill progress only after all a
   }
   assert.equal(r.phase, "ended");
   assert.equal(r.winner, "crew");
+});
+
+
+test("visual tasks enforce their actions, timing, location and completion once", () => {
+  for (const [roomId, kind] of [["bridge", "asteroids"], ["cargo", "trash"], ["medbay", "scan"], ["greenhouse", "waterplants"], ["reactor", "pump"]]) {
+    const { r, p } = fixture();
+    p.tasks = [{ room: roomId, done: false }];
+    const room = ROOMS.find((item) => item.id === roomId);
+    assert.equal(room.kind, kind);
+    Object.assign(p, taskPoint(room));
+    const challenge = action(r, p, { type: "taskStart", room: roomId }, T + 10000).task;
+    const submit = { type: "taskSubmit", room: roomId, sequence: challenge.sequence };
+    assert.throws(() => action(r, p, submit, T + 11000));
+    if (kind === "asteroids") {
+      action(r, p, { type: "taskStep", room: roomId, value: 0 }, T + 11000);
+      assert.throws(() => action(r, p, { type: "taskStep", room: roomId, value: 0 }, T + 11000));
+      assert.throws(() => action(r, p, submit, T + 12000));
+      for (let i = 1; i < 8; i++) action(r, p, { type: "taskStep", room: roomId, value: i }, T + 12000);
+    } else if (kind === "pump") {
+      assert.throws(() => action(r, p, { type: "taskStep", room: roomId, value: challenge.target + 4 }, T + 12000));
+      action(r, p, { type: "taskStep", room: roomId, value: challenge.target }, T + 12000);
+    } else if (kind !== "scan") {
+      assert.throws(() => action(r, p, { type: "taskStep", room: roomId, value: 99 }, T + 12000));
+      action(r, p, { type: "taskStep", room: roomId, value: 100 }, T + 12000);
+    } else assert.throws(() => action(r, p, submit, T + 14999));
+    const before = r.progress;
+    action(r, p, submit, T + 15100);
+    assert.equal(p.tasks[0].done, true);
+    assert.ok(r.progress > before);
+    assert.throws(() => action(r, p, submit, T + 17000));
+  }
 });
