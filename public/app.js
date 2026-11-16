@@ -80,6 +80,7 @@ function beep(freq = 600) {
   if (!sound) return;
   try {
     audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume().catch(() => {});
     const osc = audioCtx.createOscillator(),
       gain = audioCtx.createGain();
     osc.connect(gain);
@@ -90,6 +91,66 @@ function beep(freq = 600) {
     osc.start();
     osc.stop(audioCtx.currentTime + 0.14);
   } catch {}
+}
+function meetingSiren() {
+  if (!sound) return;
+  try {
+    audioCtx ??= new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume().catch(() => {});
+    const oscillator = audioCtx.createOscillator(),
+      gain = audioCtx.createGain();
+    oscillator.type = "triangle";
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+    const start = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(0.06, start + 0.05);
+    for (let i = 0; i < 6; i++) {
+      oscillator.frequency.setValueAtTime(420, start + i * 0.4);
+      oscillator.frequency.linearRampToValueAtTime(850, start + i * 0.4 + 0.2);
+      oscillator.frequency.linearRampToValueAtTime(420, start + (i + 1) * 0.4);
+    }
+    gain.gain.setValueAtTime(0.06, start + 2.3);
+    gain.gain.linearRampToValueAtTime(0, start + 2.4);
+    oscillator.start(start);
+    oscillator.stop(start + 2.4);
+    oscillator.onended = () => {
+      oscillator.disconnect();
+      gain.disconnect();
+    };
+  } catch {}
+}
+function revealRole(me) {
+  const role = ROLE(me.role),
+    impostor = role.team === "imp";
+  openModal(
+    "Твоя роль",
+    `<div class="role-reveal ${impostor ? "traitor" : "crew"}"><p class="eyebrow">ТИШЕ… ТВОЙ СЕКРЕТ НА БОРТУ</p><h2>${impostor ? "ПРЕДАТЕЛЬ" : "ЭКИПАЖ"}</h2><div class="reveal-suit">${crewmate(COLORS[me.color])}</div><h3>${role.name}</h3><p>${role.desc}</p><button class="btn full" data-action="close">На борт</button></div>`,
+    false,
+    "role-reveal",
+  );
+}
+function emergencyPanel() {
+  const me = state?.players.find((p) => p.id === myId);
+  if (state?.phase !== "game" || !me?.alive || me.rocket) return;
+  if (dist(me, { x: 840, y: 600 }) > 110) {
+    toast("Подойди к кнопке на центральном посту.");
+    return;
+  }
+  if (!me.emergencies) {
+    toast("Ты уже созывал собрание.");
+    return;
+  }
+  if (state.sabotage) {
+    toast("Сначала почините реактор!");
+    return;
+  }
+  openModal(
+    "Экстренное собрание",
+    `<div class="emergency-panel"><p class="hint">Открой защитную крышку и нажми красную кнопку, чтобы созвать экипаж.</p><div class="emergency-console"><button class="emergency-cover" data-action="open-emergency-cover">ПОДНЯТЬ КРЫШКУ ↑</button><button class="emergency-trigger" data-action="confirm-emergency" disabled aria-label="Созвать экстренное собрание">НАЖАТЬ</button></div><p>Осталось собраний: ${me.emergencies}</p></div>`,
+    false,
+    "emergency-panel",
+  );
 }
 function crewmate(color = "#f17a51", hat = "", cls = "") {
   return `<svg class="${cls}" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="g${color.slice(1)}" x2="1" y2="1"><stop stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity=".62"/></linearGradient></defs><path d="M19 45H12Q5 45 5 55V78Q5 87 19 85" fill="${color}" stroke="#121b24" stroke-width="5"/><path d="M22 90V102H38V88H53V102H70V47Q70 20 45 20Q19 20 19 47V86Q19 90 22 90Z" fill="url(#g${color.slice(1)})" stroke="#121b24" stroke-width="5" stroke-linejoin="round"/><path d="M43 35H70Q80 35 80 47V55Q80 64 67 64H43Q31 64 31 52V47Q31 35 43 35Z" fill="#9ac6cf" stroke="#121b24" stroke-width="5"/><path d="M44 40H67Q73 40 73 46H42Z" fill="#d7e9e6"/>${hat === "flower" ? '<path d="M43 20V8" stroke="#668c69" stroke-width="4"/><circle cx="43" cy="8" r="9" fill="#eac76d"/><circle cx="43" cy="8" r="4" fill="#735535"/>' : hat === "cap" ? '<path d="M20 29L27 14H60L69 29Z" fill="#37404a"/><path d="M17 28H74" stroke="#151e28" stroke-width="7"/>' : hat === "crown" ? '<path d="M24 24L20 8L35 15L44 2L54 15L68 8L63 24Z" fill="#e0bc68"/>' : ""}</svg>`;
@@ -365,6 +426,7 @@ function onState(prev) {
           `Твоя роль — ${ROLE(me.role).name}. ${ROLE(me.role).team === "imp" ? "Обмани экипаж." : "Верни корабль домой."}`,
         );
         beep(450);
+        revealRole(me);
       }
     }
     if (prev?.players.find((p) => p.id === myId)?.alive && !me.alive) {
@@ -375,7 +437,10 @@ function onState(prev) {
     updateHud();
   } else if (state.phase === "meeting") {
     gameActive = true;
-    if (lastPhase !== "meeting") stopMovement();
+    if (lastPhase !== "meeting") {
+      stopMovement();
+      meetingSiren();
+    }
     renderMeeting();
   } else if (state.phase === "ended") {
     gameActive = true;
@@ -395,6 +460,15 @@ function renderGame() {
   localPosition = null;
   drawPositions.clear();
 }
+const skillImages = new Set([
+  "puddle",
+  "kill",
+  "armor",
+  "coin",
+  "wall",
+  "borscht",
+  "task",
+]);
 const symbols = {
   kill: "†",
   borscht: "♨",
@@ -437,7 +511,7 @@ function updateHud() {
   );
   setText("#location", roomAt(me.x, me.y)?.name || "СОЕДИНИТЕЛЬНЫЙ КОРИДОР");
   const actionButton = (key, name, style = "", cd = 0, sym = "") =>
-    `<button class="action ${style}" data-game="${key}" aria-label="${name}${cd > 0 ? `, перезарядка ${cd} секунд` : ""}" ${cd > 0 ? "disabled" : ""}><span class="action-orb"><span class="action-symbol">${sym || symbols[key] || "✦"}</span>${cd > 0 ? `<small class="action-cooldown">${cd}</small>` : ""}</span><span class="action-label">${name}</span></button>`;
+    `<button class="action ${style}" data-game="${key}" aria-label="${name}${cd > 0 ? `, перезарядка ${cd} секунд` : ""}" ${cd > 0 ? "disabled" : ""}><span class="action-orb"><span class="action-symbol">${skillImages.has(key.replace("skill:", "")) ? `<img class="skill-art" src="/assets/skills/${key.replace("skill:", "")}.webp" alt="" width="64" height="64">` : sym || symbols[key] || "✦"}</span>${cd > 0 ? `<small class="action-cooldown">${cd}</small>` : ""}</span><span class="action-label">${name}</span></button>`;
   let buttons = "";
   if (me.alive && !me.rocket) {
     if (imp) {
@@ -519,6 +593,10 @@ function chooseRoom(kind) {
 }
 function gameAction(key) {
   if (!state) return;
+  if (key === "meeting") {
+    emergencyPanel();
+    return;
+  }
   if (key.startsWith("skill:")) {
     const skill = key.slice(6);
     if (skill === "teleport") {
@@ -1404,6 +1482,23 @@ document.addEventListener("click", async (e) => {
   }
   if (b.dataset.join) {
     joinDialog(b.dataset.join);
+    return;
+  }
+  if (
+    b.dataset.action === "open-emergency-cover" &&
+    modalType === "emergency-panel"
+  ) {
+    b.hidden = true;
+    modalRoot.querySelector(".emergency-trigger").disabled = false;
+    modalRoot.querySelector(".emergency-trigger").focus();
+    return;
+  }
+  if (
+    b.dataset.action === "confirm-emergency" &&
+    modalType === "emergency-panel"
+  ) {
+    closeModal();
+    send({ type: "meeting" });
     return;
   }
   if (b.dataset.game) {

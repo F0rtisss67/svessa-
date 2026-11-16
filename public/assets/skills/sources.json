@@ -1,0 +1,41 @@
+{
+  "description": "User supplied artwork; cropped and resized to WebP for skill buttons. Baked timer labels excluded from skill crops. Live timers come from game state.",
+  "transformation": {
+    "generator": "CodeRabbit Coding Agent",
+    "operations": [
+      "crop ability artwork",
+      "resize to at most 240x180",
+      "encode WebP quality 85"
+    ]
+  },
+  "sources": [
+    {
+      "file": "puddle.webp",
+      "page": "https://ibb.co.com/GQgwyC8C"
+    },
+    {
+      "file": "kill.webp",
+      "page": "https://ibb.co.com/PZNQw0KT"
+    },
+    {
+      "file": "armor.webp",
+      "page": "https://ibb.co.com/d0N3Xmhj"
+    },
+    {
+      "file": "coin.webp",
+      "page": "https://ibb.co.com/Y6qxYvS"
+    },
+    {
+      "file": "wall.webp",
+      "page": "https://ibb.co.com/C5b8S7NB"
+    },
+    {
+      "file": "borscht.webp",
+      "page": "https://ibb.co.com/5XmF1KgH"
+    },
+    {
+      "file": "task.webp",
+      "page": "https://ibb.co.com/vChvzs6L"
+    }
+  ]
+}

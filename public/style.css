@@ -2002,3 +2002,122 @@ body:has(.game-shell) #toast {
   bottom: auto;
   top: 32%;
 }
+
+/* Locally hosted skill artwork keeps image loading independent of image hosts. */
+.action-symbol .skill-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+.action-symbol:has(.skill-art) {
+  width: 100%;
+  height: 100%;
+  padding: 3px;
+}
+.role-reveal {
+  text-align: center;
+  padding: 12px 8px;
+  background: radial-gradient(ellipse at center, #507d7244, transparent 70%);
+}
+.role-reveal.traitor {
+  background: radial-gradient(ellipse at center, #b42b3544, transparent 70%);
+}
+.role-reveal h2 {
+  font-size: clamp(27px, 7vw, 48px);
+  letter-spacing: 0.1em;
+  color: #9ed8d5;
+  margin: 15px 0;
+}
+.role-reveal.traitor h2 {
+  color: #ff6868;
+}
+.role-reveal h3 {
+  font-size: 28px;
+  margin: 12px;
+}
+.role-reveal p {
+  line-height: 1.65;
+}
+.reveal-suit {
+  width: 110px;
+  margin: auto;
+  animation: role-arrival 0.45s ease-out;
+}
+@keyframes role-arrival {
+  from {
+    transform: scale(0.65);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.emergency-panel {
+  text-align: center;
+}
+.emergency-console {
+  position: relative;
+  width: 240px;
+  height: 190px;
+  margin: 25px auto;
+  display: grid;
+  place-items: center;
+  background: repeating-linear-gradient(
+    135deg,
+    #d7b04b 0 14px,
+    #26333c 14px 28px
+  );
+  border: 10px solid #536673;
+  border-radius: 18px;
+}
+.emergency-trigger {
+  width: 125px;
+  height: 125px;
+  border-radius: 50%;
+  border: 7px solid #541c25;
+  background: #ee3647;
+  color: white;
+  font-weight: 900;
+  box-shadow:
+    0 9px 0 #771e2b,
+    inset 0 5px 0 #ff9c9c;
+  cursor: pointer;
+}
+.emergency-trigger:active {
+  transform: translateY(6px);
+  box-shadow: 0 3px 0 #771e2b;
+}
+.emergency-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #87b8cded;
+  border: 5px solid #b5e2ea;
+  border-radius: 9px;
+  color: #122934;
+  font-weight: 900;
+  cursor: pointer;
+}
+.emergency-cover[hidden] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-suit {
+    animation: none;
+  }
+}
+.overlay:has(.role-reveal) {
+  background: #05090df5;
+}
+.modal:has(.role-reveal) {
+  width: min(760px, 94vw);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+body:has(.role-reveal) #toast {
+  visibility: hidden;
+}
