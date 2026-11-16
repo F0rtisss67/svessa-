@@ -1,4 +1,4 @@
-import { advanceMotion } from "./motion.js";
+import { advanceMotion, facingDirection } from "./motion.js";
 import {
   ROLES,
   ROLE,
@@ -773,18 +773,18 @@ function rounded(c, x, y, w, h, r = 8, fill, stroke) {
     c.stroke();
   }
 }
-function drawPerson(c, p, ghost = false) {
-  const color = COLORS[p.color] || COLORS[0];
-  const stride = Math.sin(p.phase || 0) * (p.strength || 0);
-  const bob = Math.abs(stride) * 2;
-  c.save();
-  c.translate(p.x, p.y);
-  if (ghost) c.globalAlpha = 0.35;
-  c.fillStyle = "#0005";
-  c.beginPath();
-  c.ellipse(0, 23, 22, 7, 0, 0, 7);
-  c.fill();
-  c.translate(0, -bob);
+const suitFrames = new Map();
+function suitFrame(color, phase, moving) {
+  const frame = moving ? Math.round(((phase % (Math.PI * 2)) / (Math.PI * 2)) * 16) % 16 : -1;
+  const key = `${color}:${frame}`;
+  if (suitFrames.has(key)) return suitFrames.get(key);
+  const image = document.createElement("canvas");
+  image.width = 144;
+  image.height = 144;
+  const c = image.getContext("2d");
+  c.scale(2, 2);
+  c.translate(36, 36);
+  const stride = frame < 0 ? 0 : Math.sin(frame / 16 * Math.PI * 2);
   c.lineWidth = 3;
   // Opposite feet alternate while the suit gently rises on each step.
   rounded(
@@ -809,15 +809,24 @@ function drawPerson(c, p, ghost = false) {
   );
   rounded(c, -24, -10, 12, 28, 4, color, "#152530");
   rounded(c, -15, -25, 37, 49, 15, color, "#152530");
-  const flip = p.fx < -0.1;
-  c.save();
-  if (flip) {
-    c.translate(6, 0);
-    c.scale(-1, 1);
-  }
   rounded(c, -2, -18, 30, 20, 7, "#99bdc7", "#142d3d");
   rounded(c, 2, -15, 21, 5, 3, "#d7e8e6");
-  c.restore();
+  suitFrames.set(key, image);
+  return image;
+}
+function drawPerson(c, p, ghost = false) {
+  const color = COLORS[p.color] || COLORS[0];
+  const bob = Math.abs(Math.sin(p.phase || 0)) * (p.strength || 0) * 2;
+  c.save();
+  c.translate(p.x, p.y);
+  if (ghost) c.globalAlpha = 0.35;
+  c.fillStyle = "#0005";
+  c.beginPath();
+  c.ellipse(0, 23, 22, 7, 0, 0, 7);
+  c.fill();
+  // Mirror the entire suit: backpack, body, feet and visor share orientation.
+  c.scale(p.facing || 1, 1);
+  c.drawImage(suitFrame(color, p.phase || 0, p.strength > 0), -36, -36 - bob, 72, 72);
   c.restore();
 }
 // The deck geometry is painted once; live markers and characters remain dynamic.
@@ -1166,7 +1175,9 @@ function drawWorld(c, t, preview = false) {
     const me = state.players.find((p) => p.id === myId);
     for (const p of [...state.players].sort((a, b) => a.y - b.y)) {
       if (p.rocket || (!p.alive && me?.alive)) continue;
-      const point = advanceMotion(preview ? null : drawPositions.get(p.id), p);
+      const previous = preview ? null : drawPositions.get(p.id);
+      const point = advanceMotion(previous, p, frameElapsed);
+      point.facing = facingDirection(previous?.facing, p.fx);
       drawPositions.set(p.id, point);
       drawPerson(c, { ...p, ...point }, !p.alive);
       c.font = "600 10px Manrope,sans-serif";
@@ -1262,7 +1273,11 @@ function drawMapPreview() {
   drawWorld(c, time(), true);
   c.restore();
 }
-function frame() {
+let previousFrameTime = 0,
+  frameElapsed = 1000 / 60;
+function frame(timestamp = performance.now()) {
+  frameElapsed = previousFrameTime ? Math.min(100, timestamp - previousFrameTime) : 1000 / 60;
+  previousFrameTime = timestamp;
   requestAnimationFrame(frame);
   if (!gameActive || !state) return;
   const el = $("#game-canvas");
@@ -1322,7 +1337,7 @@ function stopMovement() {
   if (state && ws?.readyState === 1) send({ type: "move", x: 0, y: 0 });
 }
 let lastInput = "";
-setInterval(() => {
+function sendMovement() {
   if (!gameActive || state?.phase !== "game") return;
   const blocked = !!modalType;
   const x = blocked
@@ -1337,7 +1352,7 @@ setInterval(() => {
     lastInput = input;
     send({ type: "move", x, y });
   }
-}, 70);
+}
 document.addEventListener("keydown", (e) => {
   if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
   const key =
@@ -1365,6 +1380,7 @@ document.addEventListener("keydown", (e) => {
   ) {
     if (gameActive) e.preventDefault();
     keys[key] = true;
+    sendMovement();
   }
   if (e.repeat) return;
   if (key === "Escape") {
@@ -1382,6 +1398,7 @@ document.addEventListener("keyup", (e) => {
     { KeyW: "w", KeyA: "a", KeyS: "s", KeyD: "d" }[e.code] ||
     (e.key.length === 1 ? e.key.toLowerCase() : e.key);
   keys[key] = false;
+  sendMovement();
 });
 window.addEventListener("blur", stopMovement);
 document.addEventListener("visibilitychange", () => {
@@ -1393,11 +1410,15 @@ document.addEventListener("pointerdown", (e) => {
     e.preventDefault();
     b.setPointerCapture(e.pointerId);
     keys[b.dataset.key] = true;
+    sendMovement();
   }
 });
 document.addEventListener("pointerup", (e) => {
   const b = e.target.closest("[data-key]");
-  if (b) keys[b.dataset.key] = false;
+  if (b) {
+    keys[b.dataset.key] = false;
+    sendMovement();
+  }
 });
 document.addEventListener("pointercancel", stopMovement);
 document.addEventListener("click", async (e) => {
