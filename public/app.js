@@ -1267,6 +1267,7 @@ function frame() {
   if (!gameActive || !state) return;
   const el = $("#game-canvas");
   if (!el) return;
+  el.parentElement.classList.toggle("map-open", showMap);
   const { c, w, h } = setupCanvas(el),
     me = state.players.find((p) => p.id === myId);
   if (!me) return;
