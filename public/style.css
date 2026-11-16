@@ -2121,3 +2121,9 @@ body:has(.game-shell) #toast {
 body:has(.role-reveal) #toast {
   visibility: hidden;
 }
+/* A longer list must remain scrollable on touch screens. */
+.task-list {
+  pointer-events: auto;
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}

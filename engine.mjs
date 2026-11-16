@@ -2,6 +2,7 @@ import { findPath } from "./navigation.mjs";
 import { randomInt, randomUUID } from "node:crypto";
 import {
   ROOMS,
+  TASKS_PER_CREW,
   ROLE,
   ROLES,
   COLORS,
@@ -140,7 +141,7 @@ export function start(r, t = now()) {
       alive: true,
       cooldowns: { kill: t + 20000 },
       tasks: shuffle(ROOMS.filter((x) => x.id !== "square"))
-        .slice(0, 4)
+        .slice(0, TASKS_PER_CREW)
         .map((room) => ({ room: room.id, done: false })),
       armor: 0,
       knees: false,
@@ -160,8 +161,10 @@ export function start(r, t = now()) {
     });
   }
   r.phase = "game";
-  r.taskValue =
-    100 / (r.players.filter((q) => ROLE(q.role).team === "crew").length * 4);
+  const crewTasks = r.players
+    .filter((q) => ROLE(q.role).team === "crew")
+    .reduce((total, q) => total + q.tasks.length, 0);
+  r.taskValue = 100 / crewTasks;
   r.progress = 0;
   r.bodies = [];
   r.walls = [];

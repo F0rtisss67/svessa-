@@ -48,7 +48,13 @@ test("real WebSocket clients create, join, authorize, chat, start, vote and migr
         type: "create",
         name: "Хозяин",
         color: 0,
-        settings: { public: true, max: 6, meeting: 20 },
+        settings: {
+          public: true,
+          max: 6,
+          meeting: 20,
+          practice: true,
+          role: "crew",
+        },
       },
       (m) => m.type === "joined",
     );
@@ -88,6 +94,10 @@ test("real WebSocket clients create, join, authorize, chat, start, vote and migr
       (m) => m.type === "state" && m.state.phase === "game",
     );
     assert.equal(result.state.players.filter((p) => p.role).length, 1);
+    assert.equal(
+      result.state.players.find((p) => p.id === joined.id).tasks.length,
+      8,
+    );
     result = await command(
       a,
       { type: "meeting" },
@@ -106,6 +116,10 @@ test("real WebSocket clients create, join, authorize, chat, start, vote and migr
       (m) => m.type === "state" && m.state.host === guest.id,
     );
     assert.equal(result.state.players.length, 3);
+    assert.ok(
+      Math.abs(result.state.progress - 100 / 3) < 1e-8,
+      "departing crew contributes eight unfinished tasks",
+    );
   } finally {
     for (const socket of sockets) socket.terminate();
     server.kill("SIGTERM");

@@ -388,3 +388,35 @@ test("solid kitchen table stops movement, attacks and rockets", () => {
   for (let i = 1; i <= 10; i++) tick(missileGame.r, T + 21000 + i * 50);
   assert.equal(missileGame.r.rockets.length, 0);
 });
+
+test("eight different assignments per crew member fill progress only after all are done", () => {
+  const { r } = fixture("crew", 4);
+  const crewPlayers = r.players.filter((p) => ROLE(p.role).team === "crew");
+  assert.equal(crewPlayers.length, 3);
+  for (const player of crewPlayers) {
+    assert.equal(player.tasks.length, 8);
+    assert.equal(new Set(player.tasks.map((t) => t.room)).size, 8);
+  }
+  const count = crewPlayers.length * 8;
+  assert.ok(Math.abs(r.taskValue - 100 / count) < 1e-9);
+  let finished = 0;
+  for (const player of crewPlayers) {
+    for (const task of player.tasks) {
+      Object.assign(
+        player,
+        taskPoint(ROOMS.find((room) => room.id === task.room)),
+      );
+      r.puddles = [{ x: player.x, y: player.y, until: T + 60000 }];
+      assert.equal(
+        action(r, player, { type: "taskStart", room: task.room }, T + 21000)
+          .instant,
+        true,
+      );
+      finished++;
+      assert.ok(Math.abs(r.progress - (finished * 100) / count) < 1e-8);
+      if (finished < count) assert.equal(r.phase, "game");
+    }
+  }
+  assert.equal(r.phase, "ended");
+  assert.equal(r.winner, "crew");
+});

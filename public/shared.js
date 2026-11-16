@@ -141,8 +141,9 @@ export const ROLES = [
 export const ROLE = (id) => ROLES.find((r) => r.id === id) || ROLES[0];
 // Deck plan adapted from the supplied Svessa Pump-1 illustration.
 // Existing room IDs are retained so roles, repair actions and tasks remain compatible.
-export const MAP_WIDTH = 1760;
-export const MAP_HEIGHT = 1160;
+export const MAP_WIDTH = 2200;
+export const MAP_HEIGHT = 1500;
+export const TASKS_PER_CREW = 8;
 export const ROOMS = [
   {
     id: "bridge",
@@ -232,12 +233,59 @@ export const ROOMS = [
     task: "Протереть стеклянные кинескопы",
     kind: "tap",
   },
+  {
+    id: "radio",
+    name: "Радиорубка «Сумы»",
+    x: 1830,
+    y: 420,
+    w: 300,
+    h: 260,
+    color: "#405d78",
+    task: "Настроить связь со Свессой",
+    kind: "wires",
+  },
+  {
+    id: "water",
+    name: "Водонапорная станция",
+    x: 300,
+    y: 1200,
+    w: 320,
+    h: 240,
+    color: "#416d77",
+    task: "Проверить запас воды",
+    kind: "tap",
+  },
+  {
+    id: "workshop",
+    name: "Мастерская «Завод»",
+    x: 700,
+    y: 1200,
+    w: 370,
+    h: 240,
+    color: "#72604e",
+    task: "Подобрать детали для насоса",
+    kind: "order",
+  },
+  {
+    id: "grain",
+    name: "Зернохранилище",
+    x: 1230,
+    y: 1200,
+    w: 340,
+    h: 240,
+    color: "#806d42",
+    task: "Сортировать зерно",
+    kind: "order",
+  },
 ];
 export const CORRIDORS = [
   { x: 570, y: 180, w: 600, h: 90 },
   { x: 360, y: 565, w: 1050, h: 90 },
   { x: 800, y: 280, w: 100, h: 685 },
   { x: 560, y: 930, w: 250, h: 100 },
+  { x: 1600, y: 565, w: 300, h: 90 },
+  { x: 800, y: 1040, w: 100, h: 260 },
+  { x: 560, y: 1285, w: 760, h: 90 },
 ];
 // Solid furniture uses one shared footprint for drawing, server movement and bots.
 // Height is visual only: the collision footprint is the rectangle on the floor.
@@ -257,6 +305,14 @@ export const FURNITURE = [
   { room: "reactor", kind: "pump", x: 300, y: 530, w: 60, h: 40 },
   { room: "cargo", kind: "crate", x: 1540, y: 560, w: 65, h: 40 },
   { room: "medbay", kind: "console", x: 965, y: 1015, w: 55, h: 35 },
+  { room: "radio", kind: "console", x: 1860, y: 465, w: 110, h: 55 },
+  { room: "radio", kind: "electric", x: 2030, y: 560, w: 55, h: 40 },
+  { room: "water", kind: "pump", x: 330, y: 1240, w: 105, h: 50 },
+  { room: "water", kind: "crate", x: 500, y: 1340, w: 65, h: 35 },
+  { room: "workshop", kind: "desk", x: 735, y: 1240, w: 105, h: 55 },
+  { room: "workshop", kind: "crate", x: 970, y: 1335, w: 55, h: 35 },
+  { room: "grain", kind: "crate", x: 1260, y: 1240, w: 110, h: 55 },
+  { room: "grain", kind: "crate", x: 1430, y: 1340, w: 60, h: 35 },
 ];
 const WALKABLE_AREAS = [...ROOMS, ...CORRIDORS];
 export function walkable(x, y, r = 16) {

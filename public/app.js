@@ -4,6 +4,7 @@ import {
   ROLE,
   COLORS,
   ROOMS,
+  TASKS_PER_CREW,
   CORRIDORS,
   FURNITURE,
   MAP_WIDTH,
@@ -196,7 +197,7 @@ function render() {
       : page === "guide"
         ? guide()
         : page === "map"
-          ? `<div class="eyebrow">СВЕССА НАСОС–1 / план палубы</div><h1 class="page-title">Родные места. Новая высота.</h1><p class="page-sub">8 отсеков, вентиляционная сеть и одна кнопка, которую лучше не трогать без причины.</p><canvas id="map-preview" class="map-preview"></canvas>`
+          ? `<div class="eyebrow">СВЕССА НАСОС–1 / план палубы</div><h1 class="page-title">Родные места. Новая высота.</h1><p class="page-sub">${ROOMS.length} отсеков, вентиляционная сеть и одна кнопка, которую лучше не трогать без причины.</p><canvas id="map-preview" class="map-preview"></canvas>`
           : page === "rooms"
             ? roomsPage()
             : home(),
@@ -269,7 +270,7 @@ function renderLobby() {
     me = r.players.find((p) => p.id === myId);
   if (!me) return;
   app.innerHTML = shell(
-    `<div style="display:flex;align-items:center;justify-content:space-between"><div><div class="eyebrow">Посадка открыта / ${r.settings.practice ? "учебный полёт" : "онлайн"}</div><h1 class="page-title">${esc(r.settings.name)}</h1><p class="page-sub" style="margin-bottom:0">До старта — один экипаж. После старта — как повезёт.</p></div><button class="btn secondary" data-action="leave">Покинуть</button></div><div class="lobby-grid"><div><div class="lobby-stage"><div class="art-grid"></div><div style="position:absolute;inset:50% -20% -70%;border:2px solid #53616b;transform:perspective(400px) rotateX(42deg);border-radius:50%;background:repeating-linear-gradient(0deg,#2c3c4840 0 1px,transparent 1px 45px),repeating-linear-gradient(90deg,#2c3c4840 0 1px,transparent 1px 45px)"></div><div class="lobby-crew" id="lobby-crew">${lobbyPlayers(r)}</div><div class="lobby-caption">СВЕССА–01 · ПОДГОТОВКА К ВЫЛЕТУ</div></div><div class="chat"><div class="chat-log" id="chat-log"></div><form id="chat-form"><input name="message" maxlength="220" placeholder="Скажи экипажу пару слов… Enter — отправить" aria-label="Сообщение экипажу" autocomplete="off"></form></div></div><aside><div class="lobby-code"><p>КОД ПРИГЛАШЕНИЯ</p><div class="code">${r.code}<button data-action="copy" aria-label="Скопировать код">⧉</button></div><p style="margin-top:15px;line-height:1.7;margin-bottom:0">Друзья открывают этот сайт<br>и вводят код на главной.</p></div><div class="roster"><h3>На борту <span id="roster-count">${r.players.length}</span> / ${r.settings.max}</h3><div id="roster-list">${roster(r)}</div><button class="btn secondary full" data-action="customize">Цвет и позывной</button></div>${r.host === myId ? `<div style="display:flex;gap:8px;margin-top:15px"><button class="btn secondary" style="flex:1" data-action="bots">+ Бот</button><button class="btn secondary" data-action="settings">⚙ Правила</button></div><button class="btn full" data-action="start">Начать полёт ↗</button><p class="hint" style="text-align:center">${r.players.length < 4 ? "Нужно минимум 4 игрока. Добавь ботов." : `${Math.min(r.settings.impostors, Math.floor((r.players.length - 1) / 3))} предатель · 4 задания на мирного`}</p>` : '<p class="hint" style="text-align:center">Капитан готовит корабль к вылету.</p>'}</aside></div>`,
+    `<div style="display:flex;align-items:center;justify-content:space-between"><div><div class="eyebrow">Посадка открыта / ${r.settings.practice ? "учебный полёт" : "онлайн"}</div><h1 class="page-title">${esc(r.settings.name)}</h1><p class="page-sub" style="margin-bottom:0">До старта — один экипаж. После старта — как повезёт.</p></div><button class="btn secondary" data-action="leave">Покинуть</button></div><div class="lobby-grid"><div><div class="lobby-stage"><div class="art-grid"></div><div style="position:absolute;inset:50% -20% -70%;border:2px solid #53616b;transform:perspective(400px) rotateX(42deg);border-radius:50%;background:repeating-linear-gradient(0deg,#2c3c4840 0 1px,transparent 1px 45px),repeating-linear-gradient(90deg,#2c3c4840 0 1px,transparent 1px 45px)"></div><div class="lobby-crew" id="lobby-crew">${lobbyPlayers(r)}</div><div class="lobby-caption">СВЕССА–01 · ПОДГОТОВКА К ВЫЛЕТУ</div></div><div class="chat"><div class="chat-log" id="chat-log"></div><form id="chat-form"><input name="message" maxlength="220" placeholder="Скажи экипажу пару слов… Enter — отправить" aria-label="Сообщение экипажу" autocomplete="off"></form></div></div><aside><div class="lobby-code"><p>КОД ПРИГЛАШЕНИЯ</p><div class="code">${r.code}<button data-action="copy" aria-label="Скопировать код">⧉</button></div><p style="margin-top:15px;line-height:1.7;margin-bottom:0">Друзья открывают этот сайт<br>и вводят код на главной.</p></div><div class="roster"><h3>На борту <span id="roster-count">${r.players.length}</span> / ${r.settings.max}</h3><div id="roster-list">${roster(r)}</div><button class="btn secondary full" data-action="customize">Цвет и позывной</button></div>${r.host === myId ? `<div style="display:flex;gap:8px;margin-top:15px"><button class="btn secondary" style="flex:1" data-action="bots">+ Бот</button><button class="btn secondary" data-action="settings">⚙ Правила</button></div><button class="btn full" data-action="start">Начать полёт ↗</button><p class="hint" style="text-align:center">${r.players.length < 4 ? "Нужно минимум 4 игрока. Добавь ботов." : `${Math.min(r.settings.impostors, Math.floor((r.players.length - 1) / 3))} предатель · ${TASKS_PER_CREW} заданий на мирного`}</p>` : '<p class="hint" style="text-align:center">Капитан готовит корабль к вылету.</p>'}</aside></div>`,
   );
   displayRoster = JSON.stringify(
     r.players.map((p) => [p.id, p.name, p.color, p.connected]),
@@ -703,7 +704,13 @@ function drawTask() {
             ? ["🥕", "🧅", "🥔", "🍅"]
             : t.room === "cargo"
               ? ["📦", "✉", "🌻", "⌂"]
-              : ["ϟ", "✦", "◉", "◇"];
+              : t.room === "workshop"
+                ? ["⚙", "🔧", "🔩", "⚒"]
+                : t.room === "grain"
+                  ? ["🌾", "🌻", "🫘", "🌽"]
+                  : t.room === "water"
+                    ? ["💧", "◉", "≈", "✓"]
+                    : ["ϟ", "✦", "◉", "◇"];
     area.innerHTML = `${t.kind === "order" ? `<div style="font-size:28px;letter-spacing:9px;margin:16px 0">${t.sequence.map((n, i) => `<span style="opacity:${i < taskIndex ? 0.2 : 1};color:${i === taskIndex ? "#ff774f" : "inherit"}">${icons[n]}</span>`).join("")}</div>` : '<div class="large-symbol">ϟ</div>'}<div>${icons.map((s, i) => `<button class="btn ${t.kind !== "order" && i === t.sequence[taskIndex] ? "" : "secondary"}" data-task-choice="${i}" style="font-size:24px;min-width:55px">${s}</button>`).join("")}</div>`;
     $("#task-status").textContent = `${taskIndex} / ${t.sequence.length}`;
   }
@@ -987,12 +994,14 @@ function paintDeck(c) {
   c.lineTo(1080, 40);
   c.lineTo(1470, 40);
   c.lineTo(1510, 365);
-  c.lineTo(1700, 395);
-  c.lineTo(1735, 550);
-  c.lineTo(1700, 710);
-  c.lineTo(1090, 760);
-  c.lineTo(1090, 1135);
-  c.lineTo(275, 1100);
+  c.lineTo(1820, 365);
+  c.lineTo(1820, 390);
+  c.lineTo(2145, 390);
+  c.lineTo(2180, 550);
+  c.lineTo(2145, 710);
+  c.lineTo(1605, 760);
+  c.lineTo(1605, 1470);
+  c.lineTo(275, 1470);
   c.lineTo(260, 730);
   c.lineTo(110, 710);
   c.closePath();
@@ -1037,6 +1046,14 @@ function paintDeck(c) {
     { x: 824, y: 873, w: 52, h: 18 },
     { x: 613, y: 949, w: 18, h: 52 },
     { x: 693, y: 949, w: 18, h: 52 },
+    { x: 1663, y: 584, w: 18, h: 52 },
+    { x: 1823, y: 584, w: 18, h: 52 },
+    { x: 824, y: 1103, w: 52, h: 18 },
+    { x: 824, y: 1193, w: 52, h: 18 },
+    { x: 613, y: 1304, w: 18, h: 52 },
+    { x: 693, y: 1304, w: 18, h: 52 },
+    { x: 1063, y: 1304, w: 18, h: 52 },
+    { x: 1223, y: 1304, w: 18, h: 52 },
   ])
     c.fillRect(p.x, p.y, p.w, p.h);
   c.restore();
