@@ -239,11 +239,37 @@ export const CORRIDORS = [
   { x: 800, y: 280, w: 100, h: 685 },
   { x: 560, y: 930, w: 250, h: 100 },
 ];
+// Solid furniture uses one shared footprint for drawing, server movement and bots.
+// Height is visual only: the collision footprint is the rectangle on the floor.
+export const FURNITURE = [
+  { room: "bridge", kind: "desk", x: 330, y: 870, w: 110, h: 65 },
+  { room: "greenhouse", kind: "planter", x: 1170, y: 120, w: 175, h: 45 },
+  { room: "kitchen", kind: "table", x: 725, y: 150, w: 90, h: 50 },
+  { room: "electric", kind: "electric", x: 375, y: 130, w: 105, h: 50 },
+  { room: "square", kind: "console", x: 935, y: 455, w: 65, h: 40 },
+  { room: "reactor", kind: "pump", x: 120, y: 440, w: 155, h: 55 },
+  { room: "cargo", kind: "crate", x: 1360, y: 460, w: 140, h: 60 },
+  { room: "medbay", kind: "bed", x: 735, y: 920, w: 105, h: 55 },
+  { room: "bridge", kind: "crate", x: 500, y: 980, w: 65, h: 35 },
+  { room: "greenhouse", kind: "planter", x: 1360, y: 255, w: 60, h: 45 },
+  { room: "kitchen", kind: "crate", x: 910, y: 255, w: 65, h: 40 },
+  { room: "electric", kind: "electric", x: 540, y: 245, w: 65, h: 35 },
+  { room: "reactor", kind: "pump", x: 300, y: 530, w: 60, h: 40 },
+  { room: "cargo", kind: "crate", x: 1540, y: 560, w: 65, h: 40 },
+  { room: "medbay", kind: "console", x: 965, y: 1015, w: 55, h: 35 },
+];
 const WALKABLE_AREAS = [...ROOMS, ...CORRIDORS];
 export function walkable(x, y, r = 16) {
-  return WALKABLE_AREAS.some(
+  const onFloor = WALKABLE_AREAS.some(
     (a) =>
       x - r >= a.x && x + r <= a.x + a.w && y - r >= a.y && y + r <= a.y + a.h,
+  );
+  return (
+    onFloor &&
+    !FURNITURE.some(
+      (a) =>
+        x + r > a.x && x - r < a.x + a.w && y + r > a.y && y - r < a.y + a.h,
+    )
   );
 }
 export function roomAt(x, y) {

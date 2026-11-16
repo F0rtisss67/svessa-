@@ -77,3 +77,29 @@ test("bots physically travel from each room to every other room", async () => {
       );
     }
 });
+
+test("every fixture is solid while spawns, teleport destinations and interactions are clear", async () => {
+  const { FURNITURE } = await import("../public/shared.js");
+  for (const furniture of FURNITURE) {
+    assert.equal(
+      walkable(furniture.x + furniture.w / 2, furniture.y + furniture.h / 2),
+      false,
+      furniture.room,
+    );
+  }
+  for (const room of ROOMS) {
+    for (const point of [
+      taskPoint(room),
+      { x: room.x + 55, y: room.y + room.h - 50 },
+      { x: room.x + room.w / 2, y: room.y + room.h / 2 },
+    ])
+      assert.ok(
+        walkable(point.x, point.y),
+        `${room.id}: ${JSON.stringify(point)}`,
+      );
+  }
+  for (let i = 0; i < 15; i++) {
+    assert.ok(walkable(770 + (i % 4) * 45, 545 + Math.floor(i / 4) * 48));
+    assert.ok(walkable(765 + (i % 4) * 45, 540 + Math.floor(i / 4) * 48));
+  }
+});

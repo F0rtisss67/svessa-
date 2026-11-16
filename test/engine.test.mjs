@@ -354,3 +354,37 @@ test("snapshot coordinates are compact while server physics keep full precision"
   assert.equal(p.x, 840.123456789);
   assert.equal(p.y, 600.987654321);
 });
+
+test("solid kitchen table stops movement, attacks and rockets", () => {
+  const { r, p, imp } = fixture("crew");
+  p.x = 775;
+  p.y = 225;
+  p.dx = 0;
+  p.dy = -1;
+  r.lastTick = T + 21000;
+  for (let i = 1; i <= 20; i++) tick(r, T + 21000 + i * 50);
+  assert.ok(p.y >= 216, `player walked through table: ${p.y}`);
+  p.y = 225;
+  p.dx = p.dy = 0;
+  imp.x = 775;
+  imp.y = 130;
+  assert.throws(
+    () => action(r, imp, { type: "kill", target: p.id }, T + 23000),
+    /ближе/,
+  );
+  assert.equal(p.alive, true);
+  const missileGame = fixture("dima");
+  missileGame.p.x = 775;
+  missileGame.p.y = 225;
+  missileGame.p.fx = 0;
+  missileGame.p.fy = -1;
+  action(
+    missileGame.r,
+    missileGame.p,
+    { type: "skill", key: "rocket" },
+    T + 21000,
+  );
+  missileGame.r.lastTick = T + 21000;
+  for (let i = 1; i <= 10; i++) tick(missileGame.r, T + 21000 + i * 50);
+  assert.equal(missileGame.r.rockets.length, 0);
+});

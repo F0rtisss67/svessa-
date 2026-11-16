@@ -5,6 +5,7 @@ import {
   COLORS,
   ROOMS,
   CORRIDORS,
+  FURNITURE,
   MAP_WIDTH,
   MAP_HEIGHT,
   roomAt,
@@ -814,6 +815,97 @@ function drawPerson(c, p, ghost = false) {
 }
 // The deck geometry is painted once; live markers and characters remain dynamic.
 let deckCache = null;
+// Extruded, opaque fixtures are drawn from the same footprints used by physics.
+function drawFurniture(c, item) {
+  const { x, y, w, h, kind } = item;
+  const palette = {
+    desk: ["#b88c62", "#6b4b39"],
+    planter: ["#5c8755", "#395a3e"],
+    table: ["#b88d60", "#714935"],
+    electric: ["#789394", "#344a52"],
+    console: ["#719491", "#304653"],
+    pump: ["#8e9b91", "#465b5b"],
+    crate: ["#be9969", "#745136"],
+    bed: ["#cbe0d4", "#668c8a"],
+  };
+  const [top, side] = palette[kind];
+  c.save();
+  c.fillStyle = "#07101788";
+  c.beginPath();
+  c.ellipse(x + w / 2 + 5, y + h + 8, w / 2 + 7, 11, 0, 0, Math.PI * 2);
+  c.fill();
+  rounded(c, x, y, w, h, 6, side, "#182b32");
+  rounded(c, x, y - 12, w, h - 4, 6, top, "#1b3037");
+  c.strokeStyle = "#ffffff55";
+  c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(x + 8, y - 4);
+  c.lineTo(x + w - 8, y - 4);
+  c.stroke();
+  if (kind === "planter") {
+    rounded(c, x + 8, y - 4, w - 16, h - 18, 3, "#435b37");
+    const count = Math.max(1, Math.floor((w - 16) / 25));
+    for (let i = 0; i < count; i++) {
+      c.fillStyle = i % 2 ? "#e5bd4f" : "#9fd36d";
+      c.beginPath();
+      c.arc(x + 20 + i * 25, y + 8, 7, 0, Math.PI * 2);
+      c.fill();
+    }
+  } else if (kind === "table" || kind === "desk") {
+    rounded(c, x + 10, y - 2, 22, 16, 2, "#f2e3bf");
+    if (kind === "table") {
+      c.fillStyle = "#f0d0a6";
+      c.beginPath();
+      c.arc(x + w - 27, y + 13, 14, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = "#a73930";
+      c.beginPath();
+      c.arc(x + w - 27, y + 13, 10, 0, Math.PI * 2);
+      c.fill();
+    } else {
+      rounded(c, x + w - 48, y - 1, 38, 24, 3, "#263c46", "#d3dfd1");
+      rounded(c, x + w - 42, y + 4, 26, 13, 2, "#8bc3bd");
+    }
+  } else if (kind === "electric" || kind === "console") {
+    const count = Math.max(1, Math.floor((w - 12) / 45));
+    for (let i = 0; i < count; i++) {
+      const px = x + 10 + (i * (w - 20)) / count;
+      rounded(c, px, y - 3, (w - 32) / count, 22, 3, "#254a54", "#b9d4c4");
+      c.fillStyle = i % 2 ? "#e6c76e" : "#8dd8c1";
+      c.fillRect(px + 5, y + 3, 10, 3);
+    }
+  } else if (kind === "pump") {
+    const count = Math.max(1, Math.floor((w - 12) / 45));
+    for (let i = 0; i < count; i++) {
+      const cx = x + (w * (i + 0.5)) / count;
+      c.fillStyle = "#354f50";
+      c.beginPath();
+      c.arc(cx, y + 12, 15, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = "#d6b876";
+      c.beginPath();
+      c.arc(cx, y + 12, 8, 0, Math.PI * 2);
+      c.fill();
+    }
+  } else if (kind === "crate") {
+    c.strokeStyle = "#745136";
+    c.lineWidth = 5;
+    c.strokeRect(x + 8, y - 4, w - 16, h - 20);
+    c.beginPath();
+    c.moveTo(x + 10, y - 2);
+    c.lineTo(x + w - 10, y + h - 22);
+    c.moveTo(x + w - 10, y - 2);
+    c.lineTo(x + 10, y + h - 22);
+    c.stroke();
+  } else if (kind === "bed") {
+    rounded(c, x + 8, y - 3, w - 16, h - 21, 5, "#eef2de");
+    rounded(c, x + 13, y + 1, 27, h - 29, 4, "#a3c9c4");
+    c.fillStyle = "#da6359";
+    c.fillRect(x + 65, y + 7, 20, 5);
+    c.fillRect(x + 72, y, 6, 19);
+  }
+  c.restore();
+}
 function drawRoom(c, r) {
   const { x, y, w, h } = r;
   c.save();
@@ -847,159 +939,21 @@ function drawRoom(c, r) {
   c.font = "bold 12px sans-serif";
   c.textAlign = "left";
   c.fillText(r.name.toUpperCase(), x + 13, y + 21, w - 26);
-  if (r.id === "bridge") {
-    // The village council: desks, papers and an old monitor.
-    rounded(c, x + 35, y + 94, 150, 75, 4, "#a17b59", "#3e302b");
-    c.fillStyle = "#e4d1ad";
-    c.fillRect(x + 50, y + 108, 32, 24);
-    c.fillRect(x + 98, y + 123, 27, 20);
-    rounded(c, x + 142, y + 65, 64, 42, 5, "#273d46", "#a4bab2");
-    rounded(c, x + 150, y + 72, 48, 26, 2, "#8fbfc1");
-    rounded(c, x + 215, y + 124, 50, 52, 5, "#665140", "#302c2a");
-  } else if (r.id === "greenhouse") {
-    // Glass roof and rows of cucumbers and black-eyed flowers.
-    c.strokeStyle = "#b9ddd28a";
-    c.lineWidth = 5;
-    c.beginPath();
-    c.ellipse(x + w / 2, y + 122, 145, 92, 0, Math.PI, 0);
-    c.stroke();
-    for (let i = 0; i < 4; i++) {
-      rounded(c, x + 28 + i * 77, y + 122, 61, 95, 6, "#456d49", "#8b9d62");
-      for (let j = 0; j < 3; j++) {
-        c.fillStyle = j === 1 ? "#d3af51" : "#83ad59";
-        c.beginPath();
-        c.arc(x + 58 + i * 77, y + 140 + j * 24, 9, 0, 7);
-        c.fill();
-        c.fillStyle = "#5d552d";
-        c.beginPath();
-        c.arc(x + 58 + i * 77, y + 140 + j * 24, 3, 0, 7);
-        c.fill();
-      }
-    }
-  } else if (r.id === "kitchen") {
-    rounded(c, x + 24, y + 44, w - 48, 42, 5, "#674e3b", "#b49670");
-    for (let i = 0; i < 6; i++) {
-      rounded(
-        c,
-        x + 37 + i * 43,
-        y + 51,
-        27,
-        27,
-        4,
-        i % 2 ? "#7a9d69" : "#b89b67",
-        "#363d30",
-      );
-    }
-    rounded(c, x + 78, y + 112, 170, 87, 8, "#a47e56", "#4d382c");
-    c.fillStyle = "#eee1c2";
-    c.fillRect(x + 88, y + 122, 30, 18);
-    c.fillRect(x + 205, y + 165, 30, 18);
-    c.fillStyle = "#d5b187";
-    c.beginPath();
-    c.arc(x + 163, y + 150, 26, 0, 7);
-    c.fill();
-    c.fillStyle = "#862e2a";
-    c.beginPath();
-    c.arc(x + 163, y + 150, 20, 0, 7);
-    c.fill();
-  } else if (r.id === "electric") {
-    for (let i = 0; i < 3; i++) {
-      rounded(c, x + 25 + i * 65, y + 80, 50, 105, 5, "#435159", "#90a2a0");
-      c.fillStyle = i === 1 ? "#dfb35f" : "#8eb989";
-      c.fillRect(x + 40 + i * 65, y + 94, 20, 6);
-      for (let j = 0; j < 3; j++) {
-        c.fillStyle = "#1b3038";
-        c.fillRect(x + 35 + i * 65, y + 116 + j * 16, 30, 5);
-      }
-    }
-    c.strokeStyle = "#d69757";
-    c.lineWidth = 4;
-    c.beginPath();
-    c.moveTo(x + 20, y + 195);
-    c.lineTo(x + 225, y + 195);
-    c.lineTo(x + 225, y + 60);
-    c.stroke();
-  } else if (r.id === "reactor") {
-    c.strokeStyle = "#b77b45";
-    c.lineWidth = 10;
-    c.beginPath();
-    c.moveTo(x + 30, y + 95);
-    c.lineTo(x + 85, y + 95);
-    c.lineTo(x + 85, y + 185);
-    c.lineTo(x + 265, y + 185);
-    c.stroke();
-    rounded(c, x + 48, y + 115, 210, 55, 8, "#596967", "#9aa79c");
-    for (let i = 0; i < 3; i++) {
-      c.fillStyle = "#bca477";
-      c.beginPath();
-      c.arc(x + 86 + i * 63, y + 141, 19, 0, 7);
-      c.fill();
-      c.fillStyle = "#4a5650";
-      c.beginPath();
-      c.arc(x + 86 + i * 63, y + 141, 11, 0, 7);
-      c.fill();
-    }
-    rounded(c, x + 178, y + 49, 74, 40, 4, "#293c42", "#a7ae94");
-    c.fillStyle = "#d9bb72";
-    c.font = "bold 13px sans-serif";
-    c.fillText("НАСОС", x + 185, y + 74);
-  } else if (r.id === "cargo") {
-    // The airlock has a little home on board and the yellow-blue flag.
-    rounded(c, x + 48, y + 91, 185, 112, 3, "#9b805c", "#4c3e32");
-    c.fillStyle = "#734f3f";
-    c.beginPath();
-    c.moveTo(x + 28, y + 94);
-    c.lineTo(x + 140, y + 40);
-    c.lineTo(x + 252, y + 94);
-    c.closePath();
-    c.fill();
-    c.strokeStyle = "#45382d";
-    c.lineWidth = 4;
-    c.stroke();
-    rounded(c, x + 78, y + 116, 38, 37, 3, "#9ac5c8", "#50483a");
-    rounded(c, x + 160, y + 117, 38, 37, 3, "#9ac5c8", "#50483a");
-    c.fillStyle = "#5990b4";
-    c.fillRect(x + 262, y + 71, 38, 11);
-    c.fillStyle = "#e2c76c";
-    c.fillRect(x + 262, y + 82, 38, 11);
-    c.strokeStyle = "#d5dfcf";
-    c.lineWidth = 3;
-    c.beginPath();
-    c.moveTo(x + 261, y + 70);
-    c.lineTo(x + 261, y + 163);
-    c.stroke();
-  } else if (r.id === "medbay") {
-    rounded(c, x + 40, y + 85, 115, 65, 10, "#9ec3bd", "#d0e0d0");
-    rounded(c, x + 49, y + 92, 35, 50, 6, "#e4e6cf");
-    rounded(c, x + 182, y + 76, 80, 50, 6, "#293f4a", "#9ebeb8");
-    rounded(c, x + 191, y + 84, 62, 32, 4, "#7eb7ad");
-    c.fillStyle = "#d6e7da";
-    c.fillRect(x + 212, y + 91, 18, 5);
-    c.fillRect(x + 218, y + 85, 6, 18);
-    rounded(c, x + 181, y + 150, 102, 38, 6, "#6f9390", "#a3c5b9");
-  } else if (r.id === "square") {
-    rounded(c, x + 55, y + 49, 240, 49, 7, "#314b59", "#8ba3a4");
-    for (let i = 0; i < 4; i++)
-      rounded(c, x + 69 + i * 52, y + 56, 40, 30, 3, "#7eaaa6", "#294453");
-    c.fillStyle = "#344f5a";
-    c.beginPath();
-    c.ellipse(840, 608, 69, 45, 0, 0, 7);
-    c.fill();
-    c.strokeStyle = "#779194";
-    c.lineWidth = 3;
-    c.stroke();
-    c.fillStyle = "#e67c57";
-    c.beginPath();
-    c.ellipse(840, 597, 25, 16, 0, 0, 7);
-    c.fill();
-    c.font = "9px sans-serif";
-    c.fillStyle = "#d6ded3";
+  for (const item of FURNITURE.filter((item) => item.room === r.id))
+    drawFurniture(c, item);
+  if (r.id === "square") {
+    // The emergency control is a floor panel so the entire crew can spawn here.
+    rounded(c, 812, 580, 56, 37, 10, "#343e46", "#91a6a4");
+    rounded(c, 823, 585, 34, 23, 9, "#d74843", "#ffaca0");
     c.textAlign = "center";
-    c.fillText("СОБРАНИЕ", 840, 650);
+    c.font = "bold 9px sans-serif";
+    c.fillStyle = "#e7ddd0";
+    c.fillText("СОБРАНИЕ", 840, 629);
     rounded(c, 926, 662, 50, 33, 6, "#5e3331", "#cb8066");
     c.fillStyle = "#ebba7d";
     c.font = "18px sans-serif";
     c.fillText("ϟ", 951, 686);
+    c.fillStyle = "#d0a38a";
     c.font = "8px sans-serif";
     c.fillText("САБОТАЖ", 951, 710);
     c.textAlign = "left";
